@@ -3,156 +3,297 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Modular Labyrinth Runner</title>
+<title>Labyrinth Challenge — Custom Modes</title>
 <style>
-  :root {
-    --bg:#08121a; --panel:#071824; --accent:#06b6d4; --muted:#9aa8b6; --danger:#ff6b6b;
+  :root{
+    --bg:#07121a; --panel:#071824; --accent:#06b6d4; --muted:#9aa8b6; --danger:#ff6b6b;
   }
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;background:linear-gradient(180deg,#031018 0%, #071824 100%);color:#dbeafe;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;padding:18px;display:flex;align-items:flex-start;gap:18px}
-  .ui{width:360px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:14px;border-radius:12px;box-shadow:0 6px 24px rgba(2,6,23,0.6)}
-  h1{font-size:18px;margin:0 0 10px 0}
-  label{font-size:13px;color:var(--muted);display:block;margin-top:8px}
-  select,input[type=range]{width:100%;margin-top:6px}
-  button{background:var(--accent);color:#042029;padding:8px 10px;border-radius:8px;border:0;cursor:pointer;font-weight:600}
-  .small{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:6px 8px;border-radius:8px;cursor:pointer}
-  .status{margin-top:12px;font-size:13px;color:var(--muted)}
-  .kbd{display:inline-block;background:#04121a;padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);font-weight:600;margin-left:6px}
-  .footer{font-size:12px;color:var(--muted);margin-top:12px}
-  /* canvas panel */
-  .panel{flex:1;display:flex;flex-direction:column;gap:10px;align-items:center}
-  .canvas-wrap{background:linear-gradient(180deg,#041222,#051827);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.6)}
-  canvas{display:block;border-radius:8px;background:#00121a}
-  .row{display:flex;gap:8px;align-items:center;margin-top:6px}
-  .hint{color:var(--muted);font-size:13px;margin-top:8px}
-  .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);font-weight:600}
+  body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:linear-gradient(180deg,#021018 0%, #051824 100%);color:#e6f0fb;min-height:100vh;display:flex;align-items:stretch;justify-content:center;padding:18px}
+  .container{width:100%;max-width:1100px;display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
+  /* Left menu panel */
+  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+  h1{margin:0;font-size:18px}
+  label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+  .btn{background:var(--accent);color:#031827;padding:10px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;margin-top:10px;width:100%}
+  .small{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px;border-radius:8px;cursor:pointer;width:100%}
+  .row{display:flex;gap:8px}
+  .row .small{flex:1}
+  .hint{font-size:13px;color:var(--muted);margin-top:8px}
+  .kbd{display:inline-block;background:#031724;padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);font-weight:700;margin-left:6px}
+  input[type=range]{width:100%}
+  .field{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+  .value{font-weight:700;color:#bfefff}
+  /* Right game area */
+  .game-wrap{display:flex;flex-direction:column;gap:12px}
+  .canvas-wrap{background:linear-gradient(180deg,#041829,#051827);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.6);align-self:stretch}
+  canvas{display:block;border-radius:8px;background:#00121a;width:100%;height:auto;max-width:900px}
+  .status{display:flex;gap:12px;align-items:center}
+  .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);font-weight:700}
+  .center{text-align:center}
+  /* modal/gameover */
+  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:200}
+  .modal{background:#071824;padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);width:360px;max-width:90%}
+  .modal h2{margin:0 0 8px 0}
+  .modal p{color:var(--muted)}
+  .controls{display:flex;gap:8px;margin-top:12px}
+  /* responsive */
+  @media (max-width:980px){
+    .container{grid-template-columns:1fr}
+    .panel{order:2}
+    .game-wrap{order:1}
+    canvas{height:600px}
+  }
 </style>
 </head>
 <body>
+  <div class="container" role="application" aria-label="Labyrinth Challenge">
+    <!-- Left menu/settings -->
+    <aside class="panel" aria-label="Menu & Settings">
+      <h1>Labyrinth Challenge</h1>
+      <div class="hint">Design your own mode using Settings, then press Play.</div>
 
-  <aside class="ui" aria-label="Game controls">
-    <h1>Labyrinth Runner — Modular Engine</h1>
-
-    <label>Difficulty</label>
-    <select id="difficulty">
-      <!-- populated by JS -->
-    </select>
-
-    <label>Start / Stop</label>
-    <div style="display:flex;gap:8px">
-      <button id="startBtn">Start Game</button>
-      <button id="stopBtn" class="small">Stop</button>
-      <button id="resetBtn" class="small">Reset</button>
-    </div>
-
-    <label>Quick actions</label>
-    <div style="display:flex;gap:8px;margin-top:6px">
-      <button id="spawnKeys" class="small">Spawn Keys (debug)</button>
-      <button id="toggleFog" class="small">Toggle Fog</button>
-    </div>
-
-    <div class="status">
-      <div>Timer: <span id="timer">—</span></div>
-      <div>Keys: <span id="keysCollected">0</span> / <span id="keysRequired">0</span></div>
-      <div>Mode: <span id="modeLabel">—</span></div>
-      <div>Vision: <span id="visionLabel">∞</span></div>
-    </div>
-
-    <div class="footer">
-      Controls: arrow keys / WASD to move. Press <span class="kbd">Space</span> to interact at objects.<br>
-      To add or tweak difficulties: edit the <code>difficulties</code> object in the JS. No logic changes needed.
-    </div>
-  </aside>
-
-  <main class="panel">
-    <div class="canvas-wrap" role="region" aria-label="Maze canvas">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div class="pill" id="objective">Objective: Reach Exit</div>
-        <div class="pill" id="message">Status: Idle</div>
+      <label>Quick Preset</label>
+      <div class="row" style="margin-top:6px">
+        <button class="small" id="presetEasy">Easy</button>
+        <button class="small" id="presetMedium">Medium</button>
+        <button class="small" id="presetHard">Hard</button>
       </div>
-      <canvas id="gameCanvas" width="720" height="720" tabindex="0"></canvas>
-      <div class="row">
-        <div id="progress" class="hint">Maze: —</div>
-        <div style="flex:1"></div>
-        <div class="hint">Shifting walls are automatic per difficulty</div>
+
+      <label style="margin-top:12px">Settings</label>
+
+      <div class="field">
+        <div>Maze Size</div><div class="value" id="sizeVal">15</div>
+      </div>
+      <input type="range" id="size" min="5" max="30" step="1" value="15">
+
+      <div class="field">
+        <div>Time Limit (s)</div><div class="value" id="timeVal">45</div>
+      </div>
+      <input type="range" id="time" min="5" max="180" step="1" value="45">
+
+      <div class="field">
+        <div>Wall Shift Interval (s, 0=off)</div><div class="value" id="shiftVal">5</div>
+      </div>
+      <input type="range" id="shift" min="0" max="10" step="0.5" value="5">
+
+      <div class="field">
+        <div>Shift Chance (%)</div><div class="value" id="shiftChanceVal">20</div>
+      </div>
+      <input type="range" id="shiftChance" min="0" max="100" step="5" value="20">
+
+      <div class="field">
+        <div>Keys Required</div><div class="value" id="keysVal">0</div>
+      </div>
+      <input type="range" id="keys" min="0" max="6" step="1" value="0">
+
+      <div class="field">
+        <div>Vision Radius (0 = full)</div><div class="value" id="visionVal">0</div>
+      </div>
+      <input type="range" id="vision" min="0" max="12" step="1" value="0">
+
+      <div class="field" style="margin-top:8px">
+        <div>Minotaur</div>
+        <label style="display:flex;align-items:center;gap:8px">
+          <input type="checkbox" id="minotaur"> <span class="hint" style="margin-left:6px">Enable BFS Chaser</span>
+        </label>
+      </div>
+
+      <div style="margin-top:12px" class="row">
+        <button class="btn" id="playBtn">Play</button>
+        <button class="small" id="instructionsBtn">Instructions</button>
+      </div>
+
+      <div style="margin-top:12px" class="hint">Settings are saved locally. Use presets to get started quickly.</div>
+    </aside>
+
+    <!-- Right: Game -->
+    <main class="game-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="status">
+          <div class="pill" id="modePill">Mode: Custom</div>
+          <div class="pill" id="timerPill">Time: —</div>
+          <div class="pill" id="keysPill">Keys: 0 / 0</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="small" id="menuBtn">Main Menu</button>
+          <button class="small" id="restartBtn">Restart</button>
+        </div>
+      </div>
+
+      <div class="canvas-wrap" role="region" aria-label="Maze area">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div class="pill" id="objectivePill">Objective: Reach Exit</div>
+          <div class="pill" id="statusPill">Status: Idle</div>
+        </div>
+        <canvas id="canvas" width="720" height="720" tabindex="0"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:8px">
+          <div class="hint">Controls: arrows/WASD to move. <span class="kbd">Space</span> to interact.</div>
+          <div class="hint">Click canvas to focus.</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Instructions Modal -->
+  <div id="instructionsModal" class="overlay" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2>How to play</h2>
+      <p>Choose settings on the left and press <strong>Play</strong>. Move with arrow keys or WASD. Collect required keys (if any) and reach the exit before time runs out. Walls may shift depending on your settings. If Minotaur is enabled it will chase you using BFS pathfinding. Vision radius <em>0</em> means full visibility; otherwise your sight is limited to N cells.</p>
+      <div class="controls">
+        <button class="btn" id="closeInstr">Close</button>
       </div>
     </div>
-  </main>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div id="gameOverModal" class="overlay" style="display:none">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2 id="gameOverTitle">Game Over</h2>
+      <p id="gameOverText">You lost.</p>
+      <div class="controls">
+        <button class="btn" id="playAgain">Play Again</button>
+        <button class="small" id="backToMenu">Main Menu</button>
+      </div>
+    </div>
+  </div>
 
 <script>
 /* ===========================
-   Modular Labyrinth Runner
-   - Single-file engine
-   - Edit only `difficulties` to add modes
+   Labyrinth Challenge — Modular + Menu
+   - Place this whole file in one HTML and open in browser.
+   - Settings persist to localStorage.
+   - Minotaur uses BFS.
    =========================== */
 
 (() => {
-  // --- Difficulty settings (only edit here to add modes) ---
-  const difficulties = {
-    easy:    { label:'Easy',       size:10, time:60,  shiftInterval:0, shiftChance:0,   keysNeeded:0,  minotaur:false, visionRadius: Infinity },
-    medium:  { label:'Medium',     size:15, time:45,  shiftInterval:5, shiftChance:0.2, keysNeeded:0,  minotaur:false, visionRadius: 6 },
-    hard:    { label:'Hard',       size:20, time:30,  shiftInterval:3, shiftChance:1,   keysNeeded:3,  minotaur:false, visionRadius: 5 },
-    hardcore:{ label:'Hardcore',   size:20, time:15,  shiftInterval:1, shiftChance:1,   keysNeeded:2,  minotaur:true,  visionRadius: 4 }
+  // ---------- UI elements ----------
+  const sizeEl = document.getElementById('size');
+  const timeEl = document.getElementById('time');
+  const shiftEl = document.getElementById('shift');
+  const shiftChanceEl = document.getElementById('shiftChance');
+  const keysEl = document.getElementById('keys');
+  const visionEl = document.getElementById('vision');
+  const minotaurEl = document.getElementById('minotaur');
+
+  const sizeVal = document.getElementById('sizeVal');
+  const timeVal = document.getElementById('timeVal');
+  const shiftVal = document.getElementById('shiftVal');
+  const shiftChanceVal = document.getElementById('shiftChanceVal');
+  const keysVal = document.getElementById('keysVal');
+  const visionVal = document.getElementById('visionVal');
+
+  const playBtn = document.getElementById('playBtn');
+  const instructionsBtn = document.getElementById('instructionsBtn');
+  const instructionsModal = document.getElementById('instructionsModal');
+  const closeInstr = document.getElementById('closeInstr');
+
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const timerPill = document.getElementById('timerPill');
+  const keysPill = document.getElementById('keysPill');
+  const modePill = document.getElementById('modePill');
+  const statusPill = document.getElementById('statusPill');
+
+  const menuBtn = document.getElementById('menuBtn');
+  const restartBtn = document.getElementById('restartBtn');
+
+  const instructionsToggle = document.getElementById('instructionsBtn');
+
+  const presetEasy = document.getElementById('presetEasy');
+  const presetMedium = document.getElementById('presetMedium');
+  const presetHard = document.getElementById('presetHard');
+
+  const gameOverModal = document.getElementById('gameOverModal');
+  const gameOverTitle = document.getElementById('gameOverTitle');
+  const gameOverText = document.getElementById('gameOverText');
+  const playAgain = document.getElementById('playAgain');
+  const backToMenu = document.getElementById('backToMenu');
+
+  // ---------- Persistence ----------
+  const STORAGE_KEY = 'labyrinth_settings_v1';
+  const defaultSettings = {
+    size: 15, time: 45, shiftInterval: 5, shiftChance: 0.2, keysNeeded: 0, visionRadius: 0, minotaur: false
   };
 
-  // UI bindings
-  const difficultySelect = document.getElementById('difficulty');
-  const startBtn = document.getElementById('startBtn');
-  const stopBtn = document.getElementById('stopBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const spawnKeysBtn = document.getElementById('spawnKeys');
-  const toggleFogBtn = document.getElementById('toggleFog');
+  function loadSettings(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    } catch(e){}
+    return defaultSettings;
+  }
+  function saveSettings(s){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch(e){}
+  }
 
-  const timerEl = document.getElementById('timer');
-  const keysCollectedEl = document.getElementById('keysCollected');
-  const keysRequiredEl = document.getElementById('keysRequired');
-  const modeLabel = document.getElementById('modeLabel');
-  const visionLabel = document.getElementById('visionLabel');
-  const progressEl = document.getElementById('progress');
-  const objectiveEl = document.getElementById('objective');
-  const messageEl = document.getElementById('message');
+  // ---------- Set UI from settings ----------
+  function applySettingsToUI(s){
+    sizeEl.value = s.size; sizeVal.textContent = s.size;
+    timeEl.value = s.time; timeVal.textContent = s.time;
+    shiftEl.value = s.shiftInterval; shiftVal.textContent = s.shiftInterval;
+    shiftChanceEl.value = Math.round((s.shiftChance||0) * 100); shiftChanceVal.textContent = Math.round((s.shiftChance||0) * 100);
+    keysEl.value = s.keysNeeded; keysVal.textContent = s.keysNeeded;
+    visionEl.value = s.visionRadius; visionVal.textContent = s.visionRadius;
+    minotaurEl.checked = !!s.minotaur;
+  }
 
-  const canvas = document.getElementById('gameCanvas');
-  const ctx = canvas.getContext('2d');
+  function readSettingsFromUI(){
+    return {
+      size: clampInt(parseInt(sizeEl.value), 5, 30),
+      time: clampInt(parseInt(timeEl.value), 5, 180),
+      shiftInterval: Number(shiftEl.value),
+      shiftChance: Number(shiftChanceEl.value)/100,
+      keysNeeded: clampInt(parseInt(keysEl.value), 0, 6),
+      visionRadius: clampInt(parseInt(visionEl.value), 0, 12),
+      minotaur: !!minotaurEl.checked
+    };
+  }
 
-  // Populate difficulty dropdown
-  Object.keys(difficulties).forEach(key => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = difficulties[key].label;
-    difficultySelect.appendChild(opt);
+  // ---------- helpers ----------
+  function clampInt(v,min,max){ return Math.max(min, Math.min(max, Math.round(v))); }
+
+  // sync UI displays
+  [sizeEl, timeEl, shiftEl, shiftChanceEl, keysEl, visionEl].forEach(el=>{
+    el.addEventListener('input', ()=>{
+      sizeVal.textContent = sizeEl.value;
+      timeVal.textContent = timeEl.value;
+      shiftVal.textContent = shiftEl.value;
+      shiftChanceVal.textContent = shiftChanceEl.value;
+      keysVal.textContent = keysEl.value;
+      visionVal.textContent = visionEl.value;
+    });
   });
 
-  // State
-  let currentSettings = null;
-  let maze = null; // cells grid
-  let cols = 0, rows = 0;
-  let cellSize = 0;
-  let player = null;
-  let exitCell = null;
-  let keys = []; // array of positions
-  let keysCollected = 0;
-  let timer = 0;
-  let timerInterval = null;
-  let shiftTimer = null;
-  let running = false;
-  let fogEnabled = false;
-  let minotaur = null;
-  let shiftTick = 0;
+  // presets
+  presetEasy.addEventListener('click', ()=>{ applySettingsToUI({size:10,time:60,shiftInterval:0,shiftChance:0,keysNeeded:0,visionRadius:0,minotaur:false}); saveSettings(readSettingsFromUI()); });
+  presetMedium.addEventListener('click', ()=>{ applySettingsToUI({size:15,time:45,shiftInterval:5,shiftChance:0.2,keysNeeded:0,visionRadius:6,minotaur:false}); saveSettings(readSettingsFromUI()); });
+  presetHard.addEventListener('click', ()=>{ applySettingsToUI({size:20,time:30,shiftInterval:3,shiftChance:1,keysNeeded:3,visionRadius:5,minotaur:false}); saveSettings(readSettingsFromUI()); });
 
-  // --- Maze generator (recursive backtracker) ---
-  function makeMaze(n) {
+  // load stored settings
+  const initialSettings = loadSettings();
+  applySettingsToUI(initialSettings);
+
+  // ---------- Maze engine (modular) ----------
+  let maze = null, cols = 0, rows = 0, cellSize = 0, originX = 0, originY = 0;
+  let player = null, exitCell = null, keys = [], keysCollected = 0;
+  let timer = 0, timerInterval = null;
+  let shiftIntervalId = null;
+  let minotaur = null, minotaurIntervalId = null;
+  let running = false;
+  let currentSettings = null;
+
+  // Maze generation — recursive backtracker
+  function makeMaze(n){
     cols = n; rows = n;
-    // grid of cells, each cell has walls: [N,E,S,W] true=wall exists
     const grid = new Array(cols);
     for(let x=0;x<cols;x++){
-      grid[x]=new Array(rows);
+      grid[x] = new Array(rows);
       for(let y=0;y<rows;y++){
-        grid[x][y] = { x, y, walls: [true,true,true,true], visited:false };
+        grid[x][y] = { x,y, walls:[true,true,true,true], visited:false };
       }
     }
 
-    // helpers
     function neighbors(c){
       const list = [];
       const {x,y} = c;
@@ -162,98 +303,79 @@
       if(x>0) list.push(grid[x-1][y]);       // W
       return list.filter(n=>!n.visited);
     }
-
-    // remove wall between
     function removeWall(a,b){
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      if(dx === 1){ a.walls[1]=false; b.walls[3]=false; } // E/W
+      const dx = b.x - a.x, dy = b.y - a.y;
+      if(dx === 1){ a.walls[1]=false; b.walls[3]=false; }
       else if(dx === -1){ a.walls[3]=false; b.walls[1]=false; }
-      else if(dy === 1){ a.walls[2]=false; b.walls[0]=false; } // S/N
+      else if(dy === 1){ a.walls[2]=false; b.walls[0]=false; }
       else if(dy === -1){ a.walls[0]=false; b.walls[2]=false; }
     }
-
-    // iterative stack
     const stack = [];
     const start = grid[0][0];
     start.visited = true;
     stack.push(start);
-
     while(stack.length){
-      const current = stack[stack.length-1];
-      const n = neighbors(current);
-      if(n.length){
-        const next = n[Math.floor(Math.random()*n.length)];
-        removeWall(current,next);
+      const cur = stack[stack.length-1];
+      const nlist = neighbors(cur);
+      if(nlist.length){
+        const next = nlist[Math.floor(Math.random()*nlist.length)];
+        removeWall(cur,next);
         next.visited = true;
         stack.push(next);
-      } else {
-        stack.pop();
-      }
+      } else stack.pop();
     }
-    // mark visited back to false for future algorithms
+    // reset visited flags
     for(let x=0;x<cols;x++) for(let y=0;y<rows;y++) grid[x][y].visited = false;
     return grid;
   }
 
-  // --- Utilities ---
-  function cellToPixel(c){ return { px: Math.round(c.x * cellSize), py: Math.round(c.y * cellSize) }; }
-  function inCellCenter(px, py){ return { cx: Math.floor(px / cellSize), cy: Math.floor(py / cellSize) }; }
-
-  // --- Rendering ---
-  function drawMaze() {
+  // drawing
+  function draw(){
+    // compute layout
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    const pad = 6;
+    const pad = 8;
     const area = Math.min(canvas.width, canvas.height) - pad*2;
     cellSize = Math.floor(area / Math.max(cols, rows));
-    const originX = Math.floor((canvas.width - cols*cellSize)/2);
-    const originY = Math.floor((canvas.height - rows*cellSize)/2);
+    originX = Math.floor((canvas.width - cols*cellSize)/2);
+    originY = Math.floor((canvas.height - rows*cellSize)/2);
 
-    // store for other functions
-    const topLeft = { originX, originY };
-
-    // background
-    ctx.fillStyle = '#00161a';
+    // background floor
+    ctx.fillStyle = '#001b20';
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // cells
-    ctx.strokeStyle = '#0f1724';
+    // walls
     ctx.lineWidth = Math.max(2, Math.floor(cellSize*0.08));
-
+    ctx.strokeStyle = '#08333a';
     for(let x=0;x<cols;x++){
       for(let y=0;y<rows;y++){
-        const c = maze[x][y];
+        const cell = maze[x][y];
         const px = originX + x*cellSize;
         const py = originY + y*cellSize;
 
-        // floor
         ctx.fillStyle = '#02252b';
         ctx.fillRect(px+1, py+1, cellSize-2, cellSize-2);
 
-        ctx.strokeStyle = '#08333a';
-        // walls
         ctx.beginPath();
-        if(c.walls[0]) { ctx.moveTo(px,py); ctx.lineTo(px+cellSize,py); } // N
-        if(c.walls[1]) { ctx.moveTo(px+cellSize,py); ctx.lineTo(px+cellSize,py+cellSize); } // E
-        if(c.walls[2]) { ctx.moveTo(px+cellSize,py+cellSize); ctx.lineTo(px,py+cellSize); } // S
-        if(c.walls[3]) { ctx.moveTo(px,py+cellSize); ctx.lineTo(px,py); } // W
+        if(cell.walls[0]){ ctx.moveTo(px,py); ctx.lineTo(px+cellSize,py); } // N
+        if(cell.walls[1]){ ctx.moveTo(px+cellSize,py); ctx.lineTo(px+cellSize,py+cellSize); } // E
+        if(cell.walls[2]){ ctx.moveTo(px+cellSize,py+cellSize); ctx.lineTo(px,py+cellSize); } // S
+        if(cell.walls[3]){ ctx.moveTo(px,py+cellSize); ctx.lineTo(px,py); } // W
         ctx.stroke();
       }
     }
 
-    // draw keys
-    keys.forEach(k => {
-      const px = originX + k.x*cellSize + cellSize/2;
-      const py = originY + k.y*cellSize + cellSize/2;
+    // keys
+    keys.forEach(k=>{
+      const cx = originX + k.x*cellSize + cellSize/2;
+      const cy = originY + k.y*cellSize + cellSize/2;
       ctx.fillStyle = '#ffd166';
       ctx.beginPath();
-      ctx.arc(px, py, Math.max(4,cellSize*0.14), 0, Math.PI*2);
-      ctx.fill();
+      ctx.arc(cx,cy, Math.max(4, cellSize*0.14), 0, Math.PI*2); ctx.fill();
       ctx.fillStyle = '#b37f00';
-      ctx.fillRect(px-2, py-1, 4, 2);
+      ctx.fillRect(cx-2, cy-1, 4, 2);
     });
 
-    // exit door
+    // exit
     if(exitCell){
       const px = originX + exitCell.x*cellSize;
       const py = originY + exitCell.y*cellSize;
@@ -261,45 +383,49 @@
       ctx.fillRect(px + cellSize*0.2, py + cellSize*0.2, cellSize*0.6, cellSize*0.6);
     }
 
-    // draw player
-    {
-      const px = originX + player.x*cellSize + cellSize*0.12;
-      const py = originY + player.y*cellSize + cellSize*0.12;
-      ctx.fillStyle = '#60a5fa';
-      ctx.fillRect(px, py, cellSize*0.76, cellSize*0.76);
-    }
+    // player
+    const ppx = originX + player.x*cellSize + cellSize*0.12;
+    const ppy = originY + player.y*cellSize + cellSize*0.12;
+    ctx.fillStyle = '#60a5fa';
+    ctx.fillRect(ppx,ppy,cellSize*0.76, cellSize*0.76);
 
-    // draw minotaur if exists
+    // minotaur
     if(minotaur){
-      const px = originX + minotaur.x*cellSize + cellSize*0.2;
-      const py = originY + minotaur.y*cellSize + cellSize*0.2;
+      const mpx = originX + minotaur.x*cellSize + cellSize*0.2;
+      const mpy = originY + minotaur.y*cellSize + cellSize*0.2;
       ctx.fillStyle = '#ff6b6b';
-      ctx.fillRect(px, py, cellSize*0.6, cellSize*0.6);
+      ctx.fillRect(mpx, mpy, cellSize*0.6, cellSize*0.6);
     }
 
-    // fog of war for finite vision
-    if(fogEnabled && currentSettings.visionRadius !== Infinity){
+    // fog of war (vision radius)
+    if(currentSettings.visionRadius > 0){
       const vis = currentSettings.visionRadius;
-      const grad = ctx.createRadialGradient(
-        originX + (player.x+0.5)*cellSize, originY + (player.y+0.5)*cellSize, Math.max(5, cellSize*0.5),
-        originX + (player.x+0.5)*cellSize, originY + (player.y+0.5)*cellSize, (vis+0.5)*cellSize
-      );
+      const cx = originX + (player.x+0.5)*cellSize;
+      const cy = originY + (player.y+0.5)*cellSize;
+      const radiusPx = Math.max(1, vis * cellSize);
+      const grad = ctx.createRadialGradient(cx,cy, radiusPx*0.2, cx,cy, radiusPx);
       grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(0.7, 'rgba(0,0,0,0.4)');
+      grad.addColorStop(0.6, 'rgba(0,0,0,0.45)');
       grad.addColorStop(1, 'rgba(0,0,0,0.95)');
       ctx.fillStyle = grad;
       ctx.fillRect(0,0,canvas.width,canvas.height);
     }
 
-    // small overlays
-    progressEl.textContent = `Maze: ${cols}×${rows}  cellSize: ${cellSize}px`;
-    return topLeft;
+    // status pills
+    timerPill.textContent = `Time: ${formatTime(timer)}`;
+    keysPill.textContent = `Keys: ${keysCollected} / ${currentSettings.keysNeeded}`;
   }
 
-  // --- Collision & movement helpers ---
-  function canMove(from, dir){
-    // dir: 0=N,1=E,2=S,3=W
-    return !maze[from.x][from.y].walls[dir];
+  // ---------- gameplay helpers ----------
+  function formatTime(s){
+    const mm = Math.floor(s/60);
+    const ss = s % 60;
+    return `${mm}:${ss.toString().padStart(2,'0')}`;
+  }
+
+  function canMove(cell, dir){
+    // 0=N,1=E,2=S,3=W
+    return !maze[cell.x][cell.y].walls[dir];
   }
 
   function movePlayer(dir){
@@ -313,288 +439,252 @@
   }
 
   function onPlayerMove(){
-    // collect key?
+    // collect keys
     for(let i=keys.length-1;i>=0;i--){
       if(keys[i].x===player.x && keys[i].y===player.y){
         keys.splice(i,1);
         keysCollected++;
-        keysCollectedEl.textContent = keysCollected;
-        messageEl.textContent = 'Picked up a key!';
+        statusPill.textContent = 'Picked up a key!';
       }
     }
-    // reached exit?
+    // check exit
     if(exitCell && player.x===exitCell.x && player.y===exitCell.y){
       if(keysCollected >= currentSettings.keysNeeded){
-        winGame();
+        win();
       } else {
-        messageEl.textContent = `Door locked — need ${currentSettings.keysNeeded - keysCollected} more key(s).`;
+        statusPill.textContent = `Door locked — need ${currentSettings.keysNeeded - keysCollected} more.`;
       }
     }
-    // minotaur check
+    // minotaur collision
     if(minotaur && player.x===minotaur.x && player.y===minotaur.y){
-      loseGame('Caught by the Minotaur!');
+      lose('Caught by the Minotaur!');
     }
-    drawMaze();
+    draw();
   }
 
-  // --- Key placement ---
   function placeKeys(n){
     keys = [];
-    let attempts=0;
-    while(keys.length < n && attempts < 1000){
+    let attempts = 0;
+    while(keys.length < n && attempts < 3000){
       attempts++;
       const x = Math.floor(Math.random()*cols);
       const y = Math.floor(Math.random()*rows);
-      // avoid spawn cell and exit
       if((x===player.x && y===player.y) || (exitCell && x===exitCell.x && y===exitCell.y)) continue;
-      // avoid duplicates
       if(keys.some(k=>k.x===x && k.y===y)) continue;
       keys.push({x,y});
     }
     keysCollected = 0;
-    keysCollectedEl.textContent = keysCollected;
-    keysRequiredEl.textContent = currentSettings.keysNeeded;
   }
 
-  // --- Exit placement ---
   function placeExit(){
-    // place far corner from start ideally
     exitCell = { x: cols-1, y: rows-1 };
   }
 
-  // --- Timer & shifting walls ---
+  // ---------- timers & shifting ----------
   function startTimer(){
     timer = currentSettings.time;
-    timerEl.textContent = formatTime(timer);
-    timerInterval = setInterval(() => {
-      timer -= 1;
-      timerEl.textContent = formatTime(timer);
+    if(timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(()=>{
+      timer--;
       if(timer <= 0){
         clearInterval(timerInterval);
-        loseGame('Time ran out!');
+        lose('Time ran out!');
       }
+      draw();
     }, 1000);
   }
+  function stopTimer(){ if(timerInterval){ clearInterval(timerInterval); timerInterval = null; } }
 
-  function stopTimer(){
-    if(timerInterval) { clearInterval(timerInterval); timerInterval = null; }
-  }
-
-  function formatTime(s){
-    const mm = Math.floor(s/60);
-    const ss = s % 60;
-    return `${mm}:${ss.toString().padStart(2,'0')}`;
-  }
-
-  // shifting walls: randomly toggle a wall between adjacent cells (must preserve connectivity)
   function startShifting(){
-    if(shiftTimer) clearInterval(shiftTimer);
+    if(shiftIntervalId) clearInterval(shiftIntervalId);
     if(currentSettings.shiftInterval <= 0) return;
-    shiftTick = 0;
-    shiftTimer = setInterval(() => {
-      shiftTick++;
-      // only act if chance passes
-      if(Math.random() >= currentSettings.shiftChance) return;
-      // choose a random cell and neighbor, toggle wall
+    shiftIntervalId = setInterval(()=>{
+      if(Math.random() > currentSettings.shiftChance) return;
+      // choose random cell and neighbor direction
       const x = Math.floor(Math.random()*cols);
       const y = Math.floor(Math.random()*rows);
-      const c = maze[x][y];
       const dir = Math.floor(Math.random()*4);
       const nx = x + (dir===1?1:dir===3?-1:0);
       const ny = y + (dir===2?1:dir===0?-1:0);
       if(nx<0||nx>=cols||ny<0||ny>=rows) return;
-      // toggle wall
-      const neighbor = maze[nx][ny];
-      // flip both
-      c.walls[dir] = !c.walls[dir];
-      neighbor.walls[(dir+2)%4] = !neighbor.walls[(dir+2)%4];
-      // keep it - we could run connectivity test to avoid isolating player, but to keep code simple we allow occasional dead-ends (game balance)
-      messageEl.textContent = 'Walls shifted!';
-      drawMaze();
-    }, currentSettings.shiftInterval * 1000);
+      // toggle wall -- simple approach (may produce unreachable pockets for tension)
+      const a = maze[x][y], b = maze[nx][ny];
+      a.walls[dir] = !a.walls[dir];
+      b.walls[(dir+2)%4] = !b.walls[(dir+2)%4];
+      statusPill.textContent = 'Walls shifted!';
+      draw();
+    }, Math.max(200, currentSettings.shiftInterval*1000));
   }
+  function stopShifting(){ if(shiftIntervalId){ clearInterval(shiftIntervalId); shiftIntervalId=null; } }
 
-  function stopShifting(){
-    if(shiftTimer){ clearInterval(shiftTimer); shiftTimer = null; }
-  }
-
-  // --- Minotaur (simple BFS path find and step) ---
+  // ---------- Minotaur BFS ----------
   function spawnMinotaur(){
-    minotaur = { x: Math.max(0, cols-1), y: 0 }; // top-right spawn
+    minotaur = { x: Math.max(0, cols-1), y: 0 }; // corner
   }
   function stepMinotaur(){
     if(!minotaur) return;
-    // BFS to player to find next step
-    const startKey = `${minotaur.x},${minotaur.y}`;
-    const goalKey = `${player.x},${player.y}`;
-    const q = [ { x:minotaur.x, y:minotaur.y, path:[] } ];
-    const seen = new Set([startKey]);
-    while(q.length){
-      const cur = q.shift();
+    // BFS
+    const start = `${minotaur.x},${minotaur.y}`;
+    const goal = `${player.x},${player.y}`;
+    const queue = [{x:minotaur.x,y:minotaur.y,path:[]}];
+    const seen = new Set([start]);
+    while(queue.length){
+      const cur = queue.shift();
       if(cur.x === player.x && cur.y === player.y){
-        // follow path 1 step
         if(cur.path.length >= 1){
           const nxt = cur.path[0];
           minotaur.x = nxt.x; minotaur.y = nxt.y;
         }
         break;
       }
-      // neighbors via available walls
-      const cell = maze[cur.x][cur.y];
+      const c = maze[cur.x][cur.y];
       const dirs = [
         {dx:0,dy:-1,dir:0},
         {dx:1,dy:0,dir:1},
         {dx:0,dy:1,dir:2},
-        {dx:-1,dy:0,dir:3},
+        {dx:-1,dy:0,dir:3}
       ];
       for(const d of dirs){
-        if(!cell.walls[d.dir]){
-          const nx = cur.x + d.dx, ny = cur.y + d.dy;
-          const key = `${nx},${ny}`;
-          if(nx<0||nx>=cols||ny<0||ny>=rows) continue;
-          if(seen.has(key)) continue;
-          seen.add(key);
-          q.push({ x:nx, y:ny, path: cur.path.concat([{x:nx,y:ny}]) });
-        }
+        if(c.walls[d.dir]) continue;
+        const nx = cur.x + d.dx, ny = cur.y + d.dy;
+        if(nx<0||nx>=cols||ny<0||ny>=rows) continue;
+        const key = `${nx},${ny}`;
+        if(seen.has(key)) continue;
+        seen.add(key);
+        queue.push({x:nx,y:ny,path: cur.path.concat([{x:nx,y:ny}])});
       }
     }
-    // check collision with player
+    // collision
     if(minotaur.x === player.x && minotaur.y === player.y){
-      loseGame('Caught by the Minotaur!');
+      lose('Caught by the Minotaur!');
     }
   }
 
-  // --- Game start / reset / stop / win / lose ---
-  function startGame(difficultyKey){
-    stopGame(); // ensure clean
-    currentSettings = difficulties[difficultyKey];
-    modeLabel.textContent = currentSettings.label;
-    visionLabel.textContent = currentSettings.visionRadius === Infinity ? '∞' : `${currentSettings.visionRadius} cells`;
-    fogEnabled = currentSettings.visionRadius !== Infinity;
-    // generate maze
+  // ---------- Start / stop / reset / win / lose ----------
+  function startGameFromUI(){
+    // save settings
+    const s = readSettingsFromUI();
+    saveSettings(s);
+    startGame(s);
+  }
+
+  function startGame(settings){
+    stopGame();
+    currentSettings = Object.assign({}, settings);
+    // build maze, player, exit, keys, etc.
     maze = makeMaze(currentSettings.size);
-    // spawn player at 0,0
-    player = { x:0, y:0 };
-    // place exit
+    player = { x: 0, y: 0 };
     placeExit();
-    // place keys
     placeKeys(currentSettings.keysNeeded);
-    // minotaur
-    minotaur = currentSettings.minotaur ? { x: Math.max(0, currentSettings.size-1), y:0 } : null;
-    // timer
-    startTimer();
-    // shifting
-    startShifting();
-    running = true;
-    messageEl.textContent = 'Go!';
-    objectiveEl.textContent = `Objective: Reach Exit${currentSettings.keysNeeded? ' (collect keys)' : ''}`;
-    drawMaze();
-    // step minotaur periodically if present
     if(currentSettings.minotaur){
-      minotaurStepInterval = setInterval(() => {
-        stepMinotaur();
-        drawMaze();
-      }, 400); // minotaur moves every 400ms
+      spawnMinotaur();
+    } else minotaur = null;
+    // UI labels
+    modePill.textContent = `Mode: ${currentSettings.size}×${currentSettings.size}`;
+    statusPill.textContent = 'Go!';
+    keysPill.textContent = `Keys: ${keysCollected} / ${currentSettings.keysNeeded}`;
+    // timers & shifting
+    running = true;
+    startTimer();
+    startShifting();
+    if(currentSettings.minotaur){
+      if(minotaurIntervalId) clearInterval(minotaurIntervalId);
+      minotaurIntervalId = setInterval(()=>{ stepMinotaur(); draw(); }, 400);
     }
+    draw();
+    canvas.focus();
   }
 
-  let minotaurStepInterval = null;
   function stopGame(){
     running = false;
     stopTimer();
     stopShifting();
-    if(minotaurStepInterval){ clearInterval(minotaurStepInterval); minotaurStepInterval = null; }
-    messageEl.textContent = 'Stopped';
-    drawMaze();
-  }
-  function resetGame(){
-    stopGame();
-    // reset variables but keep selected difficulty
-    const key = difficultySelect.value;
-    startGame(key);
+    if(minotaurIntervalId){ clearInterval(minotaurIntervalId); minotaurIntervalId=null; }
   }
 
-  function winGame(){
-    stopGame();
-    messageEl.textContent = 'You escaped! 🎉';
-    alert('You win! — Reached exit in time.');
-  }
-  function loseGame(reason){
-    stopGame();
-    messageEl.textContent = reason;
-    alert('Game over — ' + reason);
+  function restartGame(){
+    if(!currentSettings) return;
+    startGame(currentSettings);
   }
 
-  // --- Input handling ---
-  function keyDownHandler(e){
+  function win(){
+    stopGame();
+    showGameOver(true, 'You escaped! 🎉');
+  }
+
+  function lose(msg){
+    stopGame();
+    showGameOver(false, msg || 'You lost.');
+  }
+
+  // ---------- UI event bindings ----------
+  playBtn.addEventListener('click', startGameFromUI);
+  instructionsBtn.addEventListener('click', ()=>{ instructionsModal.style.display = 'flex'; });
+  closeInstr.addEventListener('click', ()=>{ instructionsModal.style.display='none'; });
+  menuBtn.addEventListener('click', ()=>{ // back to menu (stop game)
+    stopGame();
+    statusPill.textContent = 'Main menu';
+  });
+  restartBtn.addEventListener('click', ()=>{ restartGame(); });
+  playAgain.addEventListener('click', ()=>{ gameOverModal.style.display='none'; restartGame(); });
+  backToMenu.addEventListener('click', ()=>{ gameOverModal.style.display='none'; stopGame(); statusPill.textContent='Main menu'; });
+
+  // play modal from menu
+  function showGameOver(won, text){
+    gameOverTitle.textContent = won ? 'You Win!' : 'Game Over';
+    gameOverText.textContent = text;
+    gameOverModal.style.display = 'flex';
+  }
+
+  // presets and local save
+  // initial settings show
+  const stored = loadSettings();
+  applySettingsToUI(stored);
+
+  // keyboard controls
+  window.addEventListener('keydown', (e)=>{
     if(!running) return;
-    const key = e.key;
-    if(['ArrowUp','w','W'].includes(key)) { e.preventDefault(); movePlayer(0); }
-    else if(['ArrowRight','d','D'].includes(key)) { e.preventDefault(); movePlayer(1); }
-    else if(['ArrowDown','s','S'].includes(key)) { e.preventDefault(); movePlayer(2); }
-    else if(['ArrowLeft','a','A'].includes(key)) { e.preventDefault(); movePlayer(3); }
-    else if(key === ' '){
-      e.preventDefault();
-      // interact: pick up if in same cell is automatic; we can use space to attempt to open door if keys ok
+    const k = e.key;
+    if(['ArrowUp','w','W'].includes(k)){ e.preventDefault(); movePlayer(0); }
+    else if(['ArrowRight','d','D'].includes(k)){ e.preventDefault(); movePlayer(1); }
+    else if(['ArrowDown','s','S'].includes(k)){ e.preventDefault(); movePlayer(2); }
+    else if(['ArrowLeft','a','A'].includes(k)){ e.preventDefault(); movePlayer(3); }
+    else if(k === ' '){ e.preventDefault(); // interact/open door if at exit
       if(exitCell && player.x===exitCell.x && player.y===exitCell.y){
-        if(keysCollected >= currentSettings.keysNeeded){
-          winGame();
-        } else {
-          messageEl.textContent = `Door locked — need ${currentSettings.keysNeeded - keysCollected}`;
-        }
+        if(keysCollected >= currentSettings.keysNeeded) win();
+        else statusPill.textContent = `Door locked — need ${currentSettings.keysNeeded - keysCollected}`;
       }
     }
-  }
-
-  // --- UI bindings ---
-  startBtn.addEventListener('click', ()=>{
-    const key = difficultySelect.value;
-    startGame(key);
   });
-  stopBtn.addEventListener('click', stopGame);
-  resetBtn.addEventListener('click', resetGame);
 
-  spawnKeysBtn.addEventListener('click', ()=>{ placeKeys( Math.max(1, currentSettings.keysNeeded || 1) ); drawMaze(); });
-  toggleFogBtn.addEventListener('click', ()=>{ fogEnabled = !fogEnabled; drawMaze(); });
-
-  // keyboard bindings for secret combo? (not needed now)
-  window.addEventListener('keydown', keyDownHandler);
-
-  // canvas focus for keypress
   canvas.addEventListener('click', ()=> canvas.focus());
 
-  // draw initial blank
+  // draw a helpful initial screen
   function drawInitial(){
     ctx.fillStyle = '#00121a';
     ctx.fillRect(0,0,canvas.width,canvas.height);
     ctx.fillStyle = '#6ee7b7';
-    ctx.font = '20px Inter, Arial';
-    ctx.fillText('Choose difficulty and press Start', 24, 40);
+    ctx.font = '24px Inter, Arial';
+    ctx.fillText('Choose settings and press Play', 22, 40);
   }
   drawInitial();
 
-  // set UI defaults
-  difficultySelect.value = 'easy';
-  modeLabel.textContent = difficulties['easy'].label;
-  visionLabel.textContent = difficulties['easy'].visionRadius === Infinity ? '∞' : difficulties['easy'].visionRadius;
-  keysCollectedEl.textContent = 0;
-  keysRequiredEl.textContent = difficulties['easy'].keysNeeded;
+  // expose startGame to console for advanced users
+  window.startGame = startGame;
 
-  // when difficulty changes update labels
-  difficultySelect.addEventListener('change', ()=>{
-    const key = difficultySelect.value;
-    modeLabel.textContent = difficulties[key].label;
-    visionLabel.textContent = difficulties[key].visionRadius === Infinity ? '∞' : difficulties[key].visionRadius;
-    keysRequiredEl.textContent = difficulties[key].keysNeeded;
-    messageEl.textContent = 'Ready';
+  // set UI displayed values to current
+  sizeVal.textContent = sizeEl.value;
+  timeVal.textContent = timeEl.value;
+  shiftVal.textContent = shiftEl.value;
+  shiftChanceVal.textContent = shiftChanceEl.value;
+  keysVal.textContent = keysEl.value;
+  visionVal.textContent = visionEl.value;
+
+  // small helper: when settings change, update stored immediately
+  [sizeEl,timeEl,shiftEl,shiftChanceEl,keysEl,visionEl,minotaurEl].forEach(el=>{
+    el.addEventListener('change', ()=> saveSettings(readSettingsFromUI()));
   });
 
-  // Expose startGame function globally so adding new modes is trivial
-  window.startGame = startGame;
-  window.difficulties = difficulties;
-
-  // helpful note in console
-  console.log('Labyrinth Runner ready. To add modes: modify `difficulties` object. To start a mode from console: startGame("hard")');
 })();
 </script>
 </body>
