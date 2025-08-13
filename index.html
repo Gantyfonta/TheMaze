@@ -3,710 +3,563 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Labyrinth Challenge — Full</title>
+<title>Labyrinth Challenge</title>
 <style>
   :root{
-    --bg:#07121a; --panel:#071824; --accent:#06b6d4; --muted:#9aa8b6; --danger:#ff6b6b;
+    --bg:#07121a; --panel:#0a1c2b; --accent:#06b6d4; --muted:#9aa8b6; --ok:#34d399; --warn:#ffb454; --danger:#ff6b6b;
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:linear-gradient(180deg,#021018 0%, #051824 100%);color:#e6f0fb;min-height:100vh;display:flex;align-items:stretch;justify-content:center;padding:18px}
-  .container{width:100%;max-width:1200px;display:grid;grid-template-columns:380px 1fr;gap:18px;align-items:start}
-  .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
-  h1{margin:0;font-size:18px}
-  label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
-  .btn{background:var(--accent);color:#031827;padding:10px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:700;margin-top:10px;width:100%}
-  .small{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted);padding:8px;border-radius:8px;cursor:pointer;width:100%}
-  .row{display:flex;gap:8px}
-  .row .small{flex:1}
-  .hint{font-size:13px;color:var(--muted);margin-top:8px}
-  .kbd{display:inline-block;background:#031724;padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.02);font-weight:700;margin-left:6px}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;background:radial-gradient(1200px 800px at 30% 10%, #0a1a26, #05131e 50%, #03101a);color:#e6f0fb}
+  button{cursor:pointer}
+
+  /* Screens */
+  .screen{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px}
+  .screen.active{display:flex}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.06);border-radius:14px;box-shadow:0 20px 60px rgba(2,6,23,0.65);padding:22px;max-width:720px;width:min(92%, 720px)}
+  .title{font-size:36px;margin:0 0 6px 0}
+  .subtitle{color:var(--muted);margin:0 0 16px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{background:var(--accent);color:#04121b;border:0;border-radius:10px;padding:12px 16px;font-weight:800}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.08);color:#d4e2ef}
+  .danger{background:var(--danger);color:#1a0202}
+  .ok{background:var(--ok);color:#001912}
+  .muted{color:var(--muted)}
+
+  /* Settings */
+  .field{margin:10px 0}
+  .field > div{display:flex;justify-content:space-between;align-items:center}
+  .value{font-weight:800;color:#bfefff;margin-left:10px}
   input[type=range]{width:100%}
-  .field{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
-  .value{font-weight:700;color:#bfefff}
-  .canvas-wrap{background:linear-gradient(180deg,#041829,#051827);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 30px rgba(2,6,23,0.6);align-self:stretch}
-  canvas{display:block;border-radius:8px;background:#00121a;width:100%;height:auto;max-width:900px}
-  .status{display:flex;gap:12px;align-items:center}
-  .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);font-weight:700}
+  .toggle{display:flex;align-items:center;gap:8px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media (max-width:680px){ .grid{grid-template-columns:1fr} }
+
+  /* Game */
+  #gameHUD{position:fixed;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;gap:8px;pointer-events:none}
+  .pill{pointer-events:auto;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);padding:8px 12px;border-radius:999px;font-weight:800}
+  #hudRight{display:flex;gap:8px}
+  #canvas{display:block;margin:auto;border-radius:12px;background:#00121a;max-width:980px;width:min(94vw, 980px);height:auto;aspect-ratio:1/1}
+  #gameWrap{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:12px}
+  #gameWrap.active{display:flex}
+
+  /* Game Over */
   .center{text-align:center}
-  .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:200}
-  .modal{background:#071824;padding:20px;border-radius:12px;border:1px solid rgba(255,255,255,0.04);width:420px;max-width:94%}
-  .controls{display:flex;gap:8px;margin-top:12px}
-  @media (max-width:980px){
-    .container{grid-template-columns:1fr}
-    .panel{order:2}
-  }
-  /* Preset list */
-  .preset-list{margin-top:8px;display:flex;flex-direction:column;gap:6px}
-  .preset-item{display:flex;gap:6px;align-items:center}
-  .preset-item button{flex:1;text-align:left;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--muted);cursor:pointer}
 </style>
 </head>
 <body>
-  <div class="container" role="application" aria-label="Labyrinth Challenge">
-    <aside class="panel" aria-label="Menu & Settings">
-      <h1>Labyrinth Challenge</h1>
-      <div class="hint">Design & save custom modes, then press Play.</div>
 
-      <label>Quick Preset</label>
-      <div class="row" style="margin-top:6px">
-        <button class="small" id="presetEasy">Easy</button>
-        <button class="small" id="presetMedium">Medium</button>
-        <button class="small" id="presetHard">Hard</button>
-      </div>
-
-      <label style="margin-top:12px">Settings</label>
-      <div class="field"><div>Preset Name</div><div class="value"><input id="presetName" placeholder="my-fun-mode" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:inherit;padding:6px;border-radius:6px"/></div></div>
-
-      <div class="field"><div>Maze Size</div><div class="value" id="sizeVal">15</div></div>
-      <input type="range" id="size" min="5" max="30" step="1" value="15">
-
-      <div class="field"><div>Time Limit (s)</div><div class="value" id="timeVal">45</div></div>
-      <input type="range" id="time" min="5" max="180" step="1" value="45">
-
-      <div class="field"><div>Wall Shift Interval (s, 0=off)</div><div class="value" id="shiftVal">5</div></div>
-      <input type="range" id="shift" min="0" max="10" step="0.5" value="5">
-
-      <div class="field"><div>Shift Chance (%)</div><div class="value" id="shiftChanceVal">20</div></div>
-      <input type="range" id="shiftChance" min="0" max="100" step="5" value="20">
-
-      <div class="field"><div>Keys Required</div><div class="value" id="keysVal">0</div></div>
-      <input type="range" id="keys" min="0" max="6" step="1" value="0">
-
-      <div class="field"><div>Vision Radius (0 = full)</div><div class="value" id="visionVal">0</div></div>
-      <input type="range" id="vision" min="0" max="12" step="1" value="0">
-
-      <div class="field" style="margin-top:8px">
-        <div>Minotaur</div>
-        <label style="display:flex;align-items:center;gap:8px">
-          <input type="checkbox" id="minotaur"> <span class="hint" style="margin-left:6px">Enable BFS Chaser</span>
-        </label>
-      </div>
-
-      <div style="margin-top:12px" class="row">
-        <button class="btn" id="playBtn">Play</button>
-        <button class="small" id="instructionsBtn">Instructions</button>
-      </div>
-
-      <label style="margin-top:12px">Saved Presets</label>
-      <div class="preset-list" id="presetList"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="small" id="savePreset">Save Preset</button>
-        <button class="small" id="clearPresets">Clear All</button>
-      </div>
-
-      <div style="margin-top:12px" class="hint">Settings are saved in your browser. Presets let you quickly reuse builds.</div>
-    </aside>
-
-    <main class="game-wrap">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div class="status">
-          <div class="pill" id="modePill">Mode: Custom</div>
-          <div class="pill" id="timerPill">Time: —</div>
-          <div class="pill" id="keysPill">Keys: 0 / 0</div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="small" id="menuBtn">Main Menu</button>
-          <button class="small" id="restartBtn">Restart</button>
-        </div>
-      </div>
-
-      <div class="canvas-wrap" role="region" aria-label="Maze area">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div class="pill" id="objectivePill">Objective: Reach Exit</div>
-          <div class="pill" id="statusPill">Status: Idle</div>
-        </div>
-        <canvas id="canvas" width="840" height="840" tabindex="0"></canvas>
-        <div style="display:flex;justify-content:space-between;margin-top:8px">
-          <div class="hint">Controls: arrows/WASD to move. <span class="kbd">Space</span> to interact.</div>
-          <div class="hint">Click canvas to focus.</div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Instructions Modal -->
-  <div id="instructionsModal" class="overlay" style="display:none">
-    <div class="modal" role="dialog" aria-modal="true">
-      <h2>How to play</h2>
-      <p>Choose or create a preset, then Play. Move with arrow keys or WASD. Collect required keys (if any) and reach the exit before time runs out. Walls may shift; if Minotaur is enabled it will chase you using BFS. Vision radius 0 = full; otherwise you see N cells.</p>
-      <div class="controls"><button class="btn" id="closeInstr">Close</button></div>
+<!-- ================ TITLE ================ -->
+<section id="screenTitle" class="screen active" aria-label="Title screen">
+  <div class="card center">
+    <h1 class="title">Labyrinth Challenge</h1>
+    <p class="subtitle">Race the clock, collect keys, dodge the Minotaur.</p>
+    <div class="row" style="justify-content:center">
+      <button id="btnPlayFromTitle" class="btn">Play</button>
+      <button id="btnSettingsFromTitle" class="btn ghost">Settings</button>
+      <button id="btnInstructions" class="btn ghost">Instructions</button>
     </div>
+    <p class="muted" style="margin-top:14px">Tip: You can save your favorite setup as your browser settings — no coding needed.</p>
   </div>
+</section>
 
-  <!-- Game Over Modal -->
-  <div id="gameOverModal" class="overlay" style="display:none">
-    <div class="modal" role="dialog" aria-modal="true">
-      <h2 id="gameOverTitle">Game Over</h2>
-      <p id="gameOverText">You lost.</p>
-      <div class="controls">
-        <button class="btn" id="playAgain">Play Again</button>
-        <button class="small" id="backToMenu">Main Menu</button>
+<!-- ================ SETTINGS ================ -->
+<section id="screenSettings" class="screen" aria-label="Settings">
+  <div class="card">
+    <h2 style="margin:0 0 8px 0">Settings</h2>
+    <div class="grid">
+      <div class="field">
+        <div><span>Maze Size</span><span class="value" id="valSize">15</span></div>
+        <input id="ctlSize" type="range" min="5" max="30" step="1" value="15">
+      </div>
+      <div class="field">
+        <div><span>Time Limit (s)</span><span class="value" id="valTime">45</span></div>
+        <input id="ctlTime" type="range" min="5" max="180" step="1" value="45">
+      </div>
+      <div class="field">
+        <div><span>Wall Shift Interval (s, 0 = off)</span><span class="value" id="valShiftI">5</span></div>
+        <input id="ctlShiftI" type="range" min="0" max="10" step="0.5" value="5">
+      </div>
+      <div class="field">
+        <div><span>Shift Chance (%)</span><span class="value" id="valShiftC">20</span></div>
+        <input id="ctlShiftC" type="range" min="0" max="100" step="5" value="20">
+      </div>
+      <div class="field">
+        <div><span>Keys Required</span><span class="value" id="valKeys">0</span></div>
+        <input id="ctlKeys" type="range" min="0" max="6" step="1" value="0">
+      </div>
+      <div class="field">
+        <div><span>Vision Radius (0 = full sight)</span><span class="value" id="valVision">0</span></div>
+        <input id="ctlVision" type="range" min="0" max="12" step="1" value="0">
+      </div>
+      <div class="field toggle" style="grid-column:1/-1">
+        <input id="ctlMinotaur" type="checkbox">
+        <label for="ctlMinotaur">Enable Minotaur (BFS chase)</label>
       </div>
     </div>
+    <div class="row" style="margin-top:12px">
+      <button id="btnStart" class="btn">Play</button>
+      <button id="btnBackTitle" class="btn ghost">Back</button>
+      <button id="btnPresetEasy" class="btn ghost">Easy</button>
+      <button id="btnPresetMedium" class="btn ghost">Medium</button>
+      <button id="btnPresetHard" class="btn danger">Hard</button>
+    </div>
   </div>
+</section>
+
+<!-- ================ GAME ================ -->
+<section id="gameWrap" aria-label="Game">
+  <div id="gameHUD">
+    <div class="pill" id="hudMode">Mode: —</div>
+    <div id="hudRight">
+      <div class="pill" id="hudTimer">Time: —</div>
+      <div class="pill" id="hudKeys">Keys: 0 / 0</div>
+      <div class="pill" id="hudStatus">Status: —</div>
+      <button id="btnRestart" class="pill ghost">Restart</button>
+      <button id="btnMainMenu" class="pill ghost">Main Menu</button>
+    </div>
+  </div>
+  <canvas id="canvas" width="900" height="900" tabindex="0" aria-label="Maze canvas"></canvas>
+</section>
+
+<!-- ================ GAME OVER ================ -->
+<section id="screenOver" class="screen" aria-label="Game over">
+  <div class="card center">
+    <h2 id="overTitle" style="margin:0 0 8px 0">Game Over</h2>
+    <p id="overText" class="muted" style="margin:0 0 8px 0">You lost.</p>
+    <div class="row" style="justify-content:center">
+      <button id="btnAgain" class="btn ok">Play Again</button>
+      <button id="btnOverMenu" class="btn ghost">Main Menu</button>
+      <button id="btnOverSettings" class="btn ghost">Settings</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================ INSTRUCTIONS (modal-ish) ================ -->
+<section id="screenInstr" class="screen" aria-label="Instructions">
+  <div class="card">
+    <h2 style="margin:0 0 8px 0">How to play</h2>
+    <ul class="muted">
+      <li>Use arrow keys or WASD to move.</li>
+      <li>Collect the required keys and reach the green exit square before the timer hits 0.</li>
+      <li>Walls may shift based on your settings; shifts never permanently block your path.</li>
+      <li>If Minotaur is enabled, it chases you using BFS. Don’t let it touch you!</li>
+      <li>Vision radius > 0 enables “fog of war”.</li>
+    </ul>
+    <div class="row">
+      <button id="btnInstrBack" class="btn">Back</button>
+    </div>
+  </div>
+</section>
 
 <script>
-/* ===========================
-   Labyrinth Challenge — Full Features
-   - Preset save/load/delete
-   - WebAudio SFX (footstep, key, shift, win/lose)
-   - Shifting preserves connectivity (BFS check)
-   - Animated player & minotaur
-   - Modular settings → startGame(settings)
-   =========================== */
-
 (() => {
-  // ---------------- UI bindings ----------------
-  const sizeEl = document.getElementById('size'), timeEl = document.getElementById('time'), shiftEl = document.getElementById('shift'),
-        shiftChanceEl = document.getElementById('shiftChance'), keysEl = document.getElementById('keys'), visionEl = document.getElementById('vision'),
-        minotaurEl = document.getElementById('minotaur');
-
-  const sizeVal = document.getElementById('sizeVal'), timeVal = document.getElementById('timeVal'), shiftVal = document.getElementById('shiftVal'),
-        shiftChanceVal = document.getElementById('shiftChanceVal'), keysVal = document.getElementById('keysVal'), visionVal = document.getElementById('visionVal');
-
-  const playBtn = document.getElementById('playBtn'), instructionsBtn = document.getElementById('instructionsBtn'), instructionsModal = document.getElementById('instructionsModal'), closeInstr = document.getElementById('closeInstr');
-
-  const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
-  const timerPill = document.getElementById('timerPill'), keysPill = document.getElementById('keysPill'), modePill = document.getElementById('modePill'), statusPill = document.getElementById('statusPill');
-  const menuBtn = document.getElementById('menuBtn'), restartBtn = document.getElementById('restartBtn');
-
-  const presetEasy = document.getElementById('presetEasy'), presetMedium = document.getElementById('presetMedium'), presetHard = document.getElementById('presetHard');
-  const presetList = document.getElementById('presetList'), savePresetBtn = document.getElementById('savePreset'), clearPresetsBtn = document.getElementById('clearPresets');
-  const presetNameEl = document.getElementById('presetName');
-
-  const gameOverModal = document.getElementById('gameOverModal'), gameOverTitle = document.getElementById('gameOverTitle'), gameOverText = document.getElementById('gameOverText'), playAgain = document.getElementById('playAgain'), backToMenu = document.getElementById('backToMenu');
-
-  // --------------- persistence keys ---------------
-  const SETTINGS_KEY = 'labyrinth_settings_v2';
-  const PRESETS_KEY = 'labyrinth_presets_v1';
-
-  const defaultSettings = { size:15, time:45, shiftInterval:5, shiftChance:0.2, keysNeeded:0, visionRadius:0, minotaur:false };
-
-  function loadSettings(){ try{ const raw = localStorage.getItem(SETTINGS_KEY); if(raw) return JSON.parse(raw); }catch(e){} return defaultSettings; }
-  function saveSettings(s){ try{ localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); }catch(e){} }
-
-  function loadPresets(){ try{ const raw = localStorage.getItem(PRESETS_KEY); if(raw) return JSON.parse(raw); }catch(e){} return {}; }
-  function savePresets(p){ try{ localStorage.setItem(PRESETS_KEY, JSON.stringify(p)); }catch(e){} }
-
-  // ---------------- sync UI ----------------
-  function applySettingsToUI(s){
-    sizeEl.value = s.size; sizeVal.textContent = s.size;
-    timeEl.value = s.time; timeVal.textContent = s.time;
-    shiftEl.value = s.shiftInterval; shiftVal.textContent = s.shiftInterval;
-    shiftChanceEl.value = Math.round((s.shiftChance||0) * 100); shiftChanceVal.textContent = Math.round((s.shiftChance||0) * 100);
-    keysEl.value = s.keysNeeded; keysVal.textContent = s.keysNeeded;
-    visionEl.value = s.visionRadius; visionVal.textContent = s.visionRadius;
-    minotaurEl.checked = !!s.minotaur;
+  // ---------- Screen helpers ----------
+  const screens = {
+    title: document.getElementById('screenTitle'),
+    settings: document.getElementById('screenSettings'),
+    game: document.getElementById('gameWrap'),
+    over: document.getElementById('screenOver'),
+    instr: document.getElementById('screenInstr'),
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(el=>el.classList.remove('active'));
+    screens[name].classList.add('active');
   }
-  function readSettingsFromUI(){
-    return {
-      size: clampInt(parseInt(sizeEl.value), 5, 30),
-      time: clampInt(parseInt(timeEl.value), 5, 180),
-      shiftInterval: Number(shiftEl.value),
-      shiftChance: Number(shiftChanceEl.value)/100,
-      keysNeeded: clampInt(parseInt(keysEl.value), 0, 6),
-      visionRadius: clampInt(parseInt(visionEl.value), 0, 12),
-      minotaur: !!minotaurEl.checked
+
+  // ---------- Settings state ----------
+  const SKEY = 'labyrinth_settings_fullscreen_v1';
+  const defaults = { size:15, time:45, shiftInterval:5, shiftChance:0.2, keysNeeded:0, visionRadius:0, minotaur:false };
+  function loadSettings(){ try{ const r = localStorage.getItem(SKEY); if(r) return JSON.parse(r); }catch(e){} return {...defaults}; }
+  function saveSettings(s){ try{ localStorage.setItem(SKEY, JSON.stringify(s)); }catch(e){} }
+  let currentSettings = loadSettings();
+
+  // Controls
+  const ctl = {
+    size: document.getElementById('ctlSize'),
+    time: document.getElementById('ctlTime'),
+    shiftI: document.getElementById('ctlShiftI'),
+    shiftC: document.getElementById('ctlShiftC'),
+    keys: document.getElementById('ctlKeys'),
+    vision: document.getElementById('ctlVision'),
+    mino: document.getElementById('ctlMinotaur'),
+    vSize: document.getElementById('valSize'),
+    vTime: document.getElementById('valTime'),
+    vShiftI: document.getElementById('valShiftI'),
+    vShiftC: document.getElementById('valShiftC'),
+    vKeys: document.getElementById('valKeys'),
+    vVision: document.getElementById('valVision'),
+  };
+  function applyToUI(s){
+    ctl.size.value = s.size; ctl.vSize.textContent = s.size;
+    ctl.time.value = s.time; ctl.vTime.textContent = s.time;
+    ctl.shiftI.value = s.shiftInterval; ctl.vShiftI.textContent = s.shiftInterval;
+    ctl.shiftC.value = Math.round((s.shiftChance||0)*100); ctl.vShiftC.textContent = ctl.shiftC.value;
+    ctl.keys.value = s.keysNeeded; ctl.vKeys.textContent = s.keysNeeded;
+    ctl.vision.value = s.visionRadius; ctl.vVision.textContent = s.visionRadius;
+    ctl.mino.checked = !!s.minotaur;
+  }
+  function readFromUI(){
+    currentSettings = {
+      size: clamp(parseInt(ctl.size.value), 5, 30),
+      time: clamp(parseInt(ctl.time.value), 5, 180),
+      shiftInterval: Number(ctl.shiftI.value),
+      shiftChance: Number(ctl.shiftC.value)/100,
+      keysNeeded: clamp(parseInt(ctl.keys.value), 0, 6),
+      visionRadius: clamp(parseInt(ctl.vision.value), 0, 12),
+      minotaur: !!ctl.mino.checked
     };
+    saveSettings(currentSettings);
   }
-  function clampInt(v,min,max){ return Math.max(min, Math.min(max, Math.round(v))); }
+  function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+  ['size','time','shiftI','shiftC','keys','vision'].forEach(k=> ctl[k].addEventListener('input', ()=>{ readFromUI(); applyToUI(currentSettings); }));
+  ctl.mino.addEventListener('change', ()=>{ readFromUI(); });
 
-  [sizeEl, timeEl, shiftEl, shiftChanceEl, keysEl, visionEl].forEach(el=>{
-    el.addEventListener('input', ()=>{
-      sizeVal.textContent = sizeEl.value;
-      timeVal.textContent = timeEl.value;
-      shiftVal.textContent = shiftEl.value;
-      shiftChanceVal.textContent = shiftChanceEl.value;
-      keysVal.textContent = keysEl.value;
-      visionVal.textContent = visionEl.value;
-    });
-  });
+  // Presets
+  document.getElementById('btnPresetEasy').onclick = ()=>{ currentSettings={size:10,time:60,shiftInterval:0,shiftChance:0,keysNeeded:0,visionRadius:0,minotaur:false}; applyToUI(currentSettings); saveSettings(currentSettings); };
+  document.getElementById('btnPresetMedium').onclick = ()=>{ currentSettings={size:15,time:45,shiftInterval:5,shiftChance:0.2,keysNeeded:0,visionRadius:6,minotaur:false}; applyToUI(currentSettings); saveSettings(currentSettings); };
+  document.getElementById('btnPresetHard').onclick = ()=>{ currentSettings={size:20,time:30,shiftInterval:3,shiftChance:1,keysNeeded:3,visionRadius:5,minotaur:true}; applyToUI(currentSettings); saveSettings(currentSettings); };
 
-  // presets UI
-  function refreshPresetList(){
-    const presets = loadPresets();
-    presetList.innerHTML = '';
-    const keys = Object.keys(presets);
-    if(keys.length === 0){
-      const p = document.createElement('div'); p.className = 'hint'; p.textContent = 'No saved presets.'; presetList.appendChild(p); return;
-    }
-    keys.forEach(name=>{
-      const cfg = presets[name];
-      const row = document.createElement('div'); row.className='preset-item';
-      const btn = document.createElement('button'); btn.textContent = name;
-      btn.addEventListener('click', ()=>{ applySettingsToUI(cfg); saveSettings(readSettingsFromUI()); statusPill.textContent = `Loaded preset "${name}"`; });
-      const del = document.createElement('button'); del.className='small'; del.textContent='Delete';
-      del.style.width='80px';
-      del.addEventListener('click', ()=>{
-        if(!confirm(`Delete preset "${name}"?`)) return;
-        delete presets[name];
-        savePresets(presets);
-        refreshPresetList();
-      });
-      row.appendChild(btn); row.appendChild(del); presetList.appendChild(row);
-    });
-  }
+  applyToUI(currentSettings);
 
-  // save preset
-  savePresetBtn.addEventListener('click', ()=>{
-    const name = (presetNameEl.value||'').trim();
-    if(!name){ alert('Enter a preset name first'); return; }
-    const presets = loadPresets();
-    const cfg = readSettingsFromUI();
-    presets[name] = cfg;
-    savePresets(presets);
-    refreshPresetList();
-    presetNameEl.value = '';
-    statusPill.textContent = `Saved preset "${name}"`;
-  });
+  // ---------- Title / Settings / Instructions navigation ----------
+  document.getElementById('btnPlayFromTitle').onclick = ()=> showScreen('settings');
+  document.getElementById('btnSettingsFromTitle').onclick = ()=> showScreen('settings');
+  document.getElementById('btnInstructions').onclick = ()=> showScreen('instr');
+  document.getElementById('btnInstrBack').onclick = ()=> showScreen('title');
+  document.getElementById('btnBackTitle').onclick = ()=> showScreen('title');
+  document.getElementById('btnStart').onclick = ()=>{ readFromUI(); startGame(currentSettings); };
 
-  clearPresetsBtn.addEventListener('click', ()=>{ if(!confirm('Clear all saved presets?')) return; savePresets({}); refreshPresetList(); });
+  // ---------- Game elements ----------
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const hud = {
+    mode: document.getElementById('hudMode'),
+    timer: document.getElementById('hudTimer'),
+    keys: document.getElementById('hudKeys'),
+    status: document.getElementById('hudStatus'),
+  };
+  document.getElementById('btnMainMenu').onclick = ()=>{ stopGame(); showScreen('title'); };
+  document.getElementById('btnRestart').onclick = ()=>{ if(currentSettings) startGame(currentSettings); };
+  document.getElementById('btnOverMenu').onclick = ()=>{ showScreen('title'); };
+  document.getElementById('btnOverSettings').onclick = ()=>{ showScreen('settings'); };
+  document.getElementById('btnAgain').onclick = ()=>{ showScreen('game'); startGame(currentSettings); };
 
-  // presets shortcuts
-  presetEasy.addEventListener('click', ()=>{ applySettingsToUI({size:10,time:60,shiftInterval:0,shiftChance:0,keysNeeded:0,visionRadius:0,minotaur:false}); saveSettings(readSettingsFromUI()); statusPill.textContent='Preset Easy loaded'; });
-  presetMedium.addEventListener('click', ()=>{ applySettingsToUI({size:15,time:45,shiftInterval:5,shiftChance:0.2,keysNeeded:0,visionRadius:6,minotaur:false}); saveSettings(readSettingsFromUI()); statusPill.textContent='Preset Medium loaded'; });
-  presetHard.addEventListener('click', ()=>{ applySettingsToUI({size:20,time:30,shiftInterval:3,shiftChance:1,keysNeeded:3,visionRadius:5,minotaur:false}); saveSettings(readSettingsFromUI()); statusPill.textContent='Preset Hard loaded'; });
-
-  // load saved settings
-  const storedSettings = loadSettings();
-  applySettingsToUI(storedSettings);
-  refreshPresetList();
-
-  // ---------------- audio (WebAudio SFX) ----------------
-  const audioCtx = (window.AudioContext || window.webkitAudioContext) ? new (window.AudioContext || window.webkitAudioContext)() : null;
-  function playBeep(freq=440, type='sine', duration=0.12, vol=0.12){
-    if(!audioCtx) return;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type; o.frequency.value = freq;
-    g.gain.value = vol;
-    o.connect(g); g.connect(audioCtx.destination);
-    o.start();
-    g.gain.setValueAtTime(vol, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-    o.stop(audioCtx.currentTime + duration + 0.02);
-  }
-  function sfxFootstep(){ playBeep(520, 'sine', 0.08, 0.06); }
-  function sfxKey(){ playBeep(880, 'triangle', 0.12, 0.12); }
-  function sfxShift(){ playBeep(220, 'sawtooth', 0.18, 0.12); }
-  function sfxWin(){ playBeep(740,'sine',0.22,0.16); setTimeout(()=>playBeep(1040,'sine',0.16,0.12),180); }
-  function sfxLose(){ playBeep(180,'sine',0.28,0.14); playBeep(120,'sine',0.28,0.1); }
-
-  // ---------------- Maze engine ----------------
-  let maze = null, cols = 0, rows = 0, cellSize = 0, originX = 0, originY = 0;
-  let player = null, exitCell = null, keys = [], keysCollected = 0;
-  let timer = 0, timerInterval = null;
+  // ---------- Game state ----------
+  let maze, cols, rows, cellSize, originX, originY;
+  let player, exitCell, keySpots = [], keysCollected = 0;
+  let timer = 0, timerInterval = null, running = false;
   let shiftIntervalId = null;
-  let minotaur = null, minotaurIntervalId = null;
-  let running = false;
-  let currentSettings = null;
-  let animateFrameId = null;
-  let lastStepTime = 0;
+  let minotaur = null, minoIntervalId = null;
+  let animId = null;
 
-  // generate maze (recursive backtracker)
-  function makeMaze(n){
-    cols=n; rows=n;
-    const grid = new Array(cols);
-    for(let x=0;x<cols;x++){ grid[x]=new Array(rows); for(let y=0;y<rows;y++) grid[x][y] = {x,y,walls:[true,true,true,true], visited:false}; }
-    function neighbors(c){
-      const list=[]; const {x,y}=c;
-      if(y>0) list.push(grid[x][y-1]); if(x<cols-1) list.push(grid[x+1][y]); if(y<rows-1) list.push(grid[x][y+1]); if(x>0) list.push(grid[x-1][y]);
-      return list.filter(n=>!n.visited);
+  function startGame(s){
+    stopGame();
+    showScreen('game');
+    // Build maze
+    maze = buildMaze(s.size);
+    cols = rows = s.size;
+    player = {x:0,y:0,lastDx:0,lastDy:0};
+    exitCell = {x:cols-1, y:rows-1};
+    placeKeys(s.keysNeeded);
+    keysCollected = 0;
+    if(s.minotaur) minotaur = {x:cols-1, y:0}; else minotaur = null;
+
+    hud.mode.textContent = `Mode: ${s.size}×${s.size}`;
+    hud.status.textContent = 'Go!';
+    hud.keys.textContent = `Keys: ${keysCollected} / ${s.keysNeeded}`;
+
+    // Timers
+    timer = s.time;
+    timerInterval = setInterval(()=>{ timer--; if(timer<=0){ lose('Time ran out!'); } }, 1000);
+
+    // Shifting
+    if(s.shiftInterval>0){
+      shiftIntervalId = setInterval(()=> tryShift(s), Math.max(120, s.shiftInterval*1000));
     }
-    function removeWall(a,b){
-      const dx=b.x-a.x, dy=b.y-a.y;
-      if(dx===1){a.walls[1]=false; b.walls[3]=false;}
-      else if(dx===-1){a.walls[3]=false; b.walls[1]=false;}
-      else if(dy===1){a.walls[2]=false; b.walls[0]=false;}
-      else if(dy===-1){a.walls[0]=false; b.walls[2]=false;}
+
+    // Minotaur
+    if(s.minotaur){
+      minoIntervalId = setInterval(()=>{ stepMinotaur(); draw(); }, 420);
     }
-    const stack=[]; const start = grid[0][0]; start.visited=true; stack.push(start);
+
+    running = true;
+    animId = requestAnimationFrame(draw);
+    canvas.focus();
+  }
+
+  function stopGame(){
+    running = false;
+    if(timerInterval){ clearInterval(timerInterval); timerInterval=null; }
+    if(shiftIntervalId){ clearInterval(shiftIntervalId); shiftIntervalId=null; }
+    if(minoIntervalId){ clearInterval(minoIntervalId); minoIntervalId=null; }
+    if(animId){ cancelAnimationFrame(animId); animId=null; }
+  }
+
+  function win(){
+    stopGame();
+    document.getElementById('overTitle').textContent = 'You Win!';
+    document.getElementById('overText').textContent = 'You escaped the labyrinth. 🎉';
+    showScreen('over');
+  }
+  function lose(msg){
+    stopGame();
+    document.getElementById('overTitle').textContent = 'Game Over';
+    document.getElementById('overText').textContent = msg||'You lost.';
+    showScreen('over');
+  }
+
+  // ---------- Maze generation (recursive backtracker) ----------
+  function buildMaze(n){
+    const grid = Array.from({length:n}, (_,x)=> Array.from({length:n}, (_,y)=>({x,y,walls:[true,true,true,true],visited:false})));
+    function carve(a,b){
+      const dx = b.x - a.x, dy = b.y - a.y;
+      if(dx===1){ a.walls[1]=false; b.walls[3]=false; }
+      else if(dx===-1){ a.walls[3]=false; b.walls[1]=false; }
+      else if(dy===1){ a.walls[2]=false; b.walls[0]=false; }
+      else if(dy===-1){ a.walls[0]=false; b.walls[2]=false; }
+    }
+    function unvisitedNeighbors(c){
+      const out=[]; const {x,y}=c;
+      if(y>0 && !grid[x][y-1].visited) out.push(grid[x][y-1]);
+      if(x<n-1 && !grid[x+1][y].visited) out.push(grid[x+1][y]);
+      if(y<n-1 && !grid[x][y+1].visited) out.push(grid[x][y+1]);
+      if(x>0 && !grid[x-1][y].visited) out.push(grid[x-1][y]);
+      return out;
+    }
+    const start = grid[0][0]; start.visited=true;
+    const stack=[start];
     while(stack.length){
       const cur = stack[stack.length-1];
-      const nlist = neighbors(cur);
-      if(nlist.length){
-        const next = nlist[Math.floor(Math.random()*nlist.length)];
-        removeWall(cur,next);
-        next.visited = true;
-        stack.push(next);
-      } else stack.pop();
+      const opts = unvisitedNeighbors(cur);
+      if(opts.length){
+        const next = opts[Math.floor(Math.random()*opts.length)];
+        carve(cur,next);
+        next.visited=true; stack.push(next);
+      }else stack.pop();
     }
-    for(let x=0;x<cols;x++) for(let y=0;y<rows;y++) grid[x][y].visited=false;
+    for(let x=0;x<n;x++) for(let y=0;y<n;y++) grid[x][y].visited=false;
     return grid;
   }
 
-  // helper BFS connectivity check between player and exit
-  function isConnected(fromX, fromY, toX, toY){
-    const startKey = `${fromX},${fromY}`;
-    const q = [{x:fromX,y:fromY}];
-    const seen = new Set([startKey]);
+  // ---------- Movement & interactions ----------
+  window.addEventListener('keydown', (e)=>{
+    if(!running) return;
+    const k = e.key;
+    if(['ArrowUp','w','W'].includes(k)){ e.preventDefault(); tryMove(0); }
+    else if(['ArrowRight','d','D'].includes(k)){ e.preventDefault(); tryMove(1); }
+    else if(['ArrowDown','s','S'].includes(k)){ e.preventDefault(); tryMove(2); }
+    else if(['ArrowLeft','a','A'].includes(k)){ e.preventDefault(); tryMove(3); }
+    else if(k===' '){ e.preventDefault(); // interact at exit
+      if(player.x===exitCell.x && player.y===exitCell.y){
+        if(keysCollected>=currentSettings.keysNeeded) win();
+        else hud.status.textContent = `Door locked — need ${currentSettings.keysNeeded - keysCollected}`;
+      }
+    }
+  });
+
+  function canGo(x,y,dir){
+    const c = maze[x][y];
+    return !c.walls[dir];
+  }
+  function tryMove(dir){
+    let nx=player.x, ny=player.y;
+    if(!canGo(player.x,player.y,dir)) return;
+    if(dir===0) ny--;
+    if(dir===1) nx++;
+    if(dir===2) ny++;
+    if(dir===3) nx--;
+    player.x=nx; player.y=ny;
+    player.lastDx = (dir===1?1:dir===3?-1:0);
+    player.lastDy = (dir===2?1:dir===0?-1:0);
+    afterMove();
+  }
+  function afterMove(){
+    // key pickup
+    for(let i=keySpots.length-1;i>=0;i--){
+      if(keySpots[i].x===player.x && keySpots[i].y===player.y){
+        keySpots.splice(i,1); keysCollected++;
+        hud.status.textContent = 'Picked up a key!';
+      }
+    }
+    // exit check
+    if(player.x===exitCell.x && player.y===exitCell.y){
+      if(keysCollected>=currentSettings.keysNeeded) win();
+    }
+    // minotaur collision
+    if(minotaur && player.x===minotaur.x && player.y===minotaur.y) lose('Caught by the Minotaur!');
+    // redraw
+    draw();
+  }
+
+  function placeKeys(n){
+    keySpots = [];
+    let tries=0;
+    while(keySpots.length<n && tries<3000){
+      tries++;
+      const x = Math.floor(Math.random()*cols), y = Math.floor(Math.random()*rows);
+      if((x===0 && y===0) || (x===exitCell.x && y===exitCell.y)) continue;
+      if(keySpots.some(k=>k.x===x && k.y===y)) continue;
+      keySpots.push({x,y});
+    }
+  }
+
+  // ---------- Wall shifting (connectivity-safe) ----------
+  function isConnected(ax,ay,bx,by){
+    const q=[{x:ax,y:ay}], seen=new Set([`${ax},${ay}`]);
     while(q.length){
-      const cur = q.shift();
-      if(cur.x===toX && cur.y===toY) return true;
-      const cell = maze[cur.x][cur.y];
-      const dirs = [
-        {dx:0,dy:-1,dir:0},
-        {dx:1,dy:0,dir:1},
-        {dx:0,dy:1,dir:2},
-        {dx:-1,dy:0,dir:3},
-      ];
+      const c=q.shift();
+      if(c.x===bx && c.y===by) return true;
+      const cell = maze[c.x][c.y];
+      const dirs=[{dx:0,dy:-1,dir:0},{dx:1,dy:0,dir:1},{dx:0,dy:1,dir:2},{dx:-1,dy:0,dir:3}];
       for(const d of dirs){
         if(cell.walls[d.dir]) continue;
-        const nx = cur.x + d.dx, ny = cur.y + d.dy;
+        const nx=c.x+d.dx, ny=c.y+d.dy;
         if(nx<0||nx>=cols||ny<0||ny>=rows) continue;
-        const key = `${nx},${ny}`;
-        if(seen.has(key)) continue;
+        const key=`${nx},${ny}`; if(seen.has(key)) continue;
         seen.add(key); q.push({x:nx,y:ny});
       }
     }
     return false;
   }
 
-  // draw with animation (player bobbing & minotaur pulse)
-  function draw(timestamp){
-    // timestamp optional for animation
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    const pad=8;
+  function tryShift(s){
+    if(Math.random()>s.shiftChance) return; // no shift this tick
+    const x = Math.floor(Math.random()*cols), y = Math.floor(Math.random()*rows), dir = Math.floor(Math.random()*4);
+    const nx = x + (dir===1?1:dir===3?-1:0), ny = y + (dir===2?1:dir===0?-1:0);
+    if(nx<0||nx>=cols||ny<0||ny>=rows) return;
+    const a=maze[x][y], b=maze[nx][ny];
+    const prevA=a.walls[dir], prevB=b.walls[(dir+2)%4];
+    a.walls[dir]=!a.walls[dir]; b.walls[(dir+2)%4]=!b.walls[(dir+2)%4];
+
+    // keep if: player->exit connected AND all remaining keys reachable from player
+    let ok = isConnected(player.x,player.y, exitCell.x,exitCell.y);
+    if(ok){
+      for(const k of keySpots){
+        if(!isConnected(player.x,player.y, k.x,k.y)){ ok=false; break; }
+      }
+    }
+    if(!ok){ a.walls[dir]=prevA; b.walls[(dir+2)%4]=prevB; }
+    else { hud.status.textContent = 'Walls shifted!'; }
+    draw();
+  }
+
+  // ---------- Minotaur (BFS) ----------
+  function stepMinotaur(){
+    if(!minotaur) return;
+    const q=[{x:minotaur.x,y:minotaur.y,path:[]}];
+    const seen = new Set([`${minotaur.x},${minotaur.y}`]);
+    while(q.length){
+      const cur=q.shift();
+      if(cur.x===player.x && cur.y===player.y){
+        if(cur.path.length){ const n=cur.path[0]; minotaur.x=n.x; minotaur.y=n.y; }
+        break;
+      }
+      const c = maze[cur.x][cur.y];
+      const dirs=[{dx:0,dy:-1,dir:0},{dx:1,dy:0,dir:1},{dx:0,dy:1,dir:2},{dx:-1,dy:0,dir:3}];
+      for(const d of dirs){
+        if(c.walls[d.dir]) continue;
+        const nx=cur.x+d.dx, ny=cur.y+d.dy;
+        if(nx<0||nx>=cols||ny<0||ny>=rows) continue;
+        const key=`${nx},${ny}`; if(seen.has(key)) continue;
+        seen.add(key);
+        q.push({x:nx,y:ny,path:cur.path.concat([{x:nx,y:ny}])});
+      }
+    }
+    if(minotaur.x===player.x && minotaur.y===player.y) lose('Caught by the Minotaur!');
+  }
+
+  // ---------- Drawing ----------
+  function draw(){
+    if(!currentSettings) return;
+    // layout
+    const pad=10;
     const area = Math.min(canvas.width, canvas.height) - pad*2;
     cellSize = Math.floor(area / Math.max(cols, rows));
     originX = Math.floor((canvas.width - cols*cellSize)/2);
     originY = Math.floor((canvas.height - rows*cellSize)/2);
 
-    // background
-    ctx.fillStyle = '#001b20'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // bg
+    ctx.fillStyle='#00121a'; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // walls & cells
+    // grid + walls
     ctx.lineWidth = Math.max(2, Math.floor(cellSize*0.08));
     for(let x=0;x<cols;x++){
       for(let y=0;y<rows;y++){
-        const cell = maze[x][y];
-        const px = originX + x*cellSize, py = originY + y*cellSize;
-        ctx.fillStyle = '#02252b';
-        ctx.fillRect(px+1,py+1,cellSize-2,cellSize-2);
-        ctx.strokeStyle = '#08333a';
-        ctx.beginPath();
-        if(cell.walls[0]){ ctx.moveTo(px,py); ctx.lineTo(px+cellSize,py); }
-        if(cell.walls[1]){ ctx.moveTo(px+cellSize,py); ctx.lineTo(px+cellSize,py+cellSize); }
-        if(cell.walls[2]){ ctx.moveTo(px+cellSize,py+cellSize); ctx.lineTo(px,py+cellSize); }
-        if(cell.walls[3]){ ctx.moveTo(px,py+cellSize); ctx.lineTo(px,py); }
+        const c = maze[x][y];
+        const px=originX+x*cellSize, py=originY+y*cellSize;
+        ctx.fillStyle='#02252b'; ctx.fillRect(px+1,py+1,cellSize-2,cellSize-2);
+        ctx.strokeStyle='#08333a'; ctx.beginPath();
+        if(c.walls[0]){ ctx.moveTo(px,py); ctx.lineTo(px+cellSize,py); }
+        if(c.walls[1]){ ctx.moveTo(px+cellSize,py); ctx.lineTo(px+cellSize,py+cellSize); }
+        if(c.walls[2]){ ctx.moveTo(px+cellSize,py+cellSize); ctx.lineTo(px,py+cellSize); }
+        if(c.walls[3]){ ctx.moveTo(px,py+cellSize); ctx.lineTo(px,py); }
         ctx.stroke();
       }
     }
 
     // keys
-    keys.forEach(k=>{
+    for(const k of keySpots){
       const cx = originX + k.x*cellSize + cellSize/2;
       const cy = originY + k.y*cellSize + cellSize/2;
-      ctx.fillStyle = '#ffd166';
-      ctx.beginPath(); ctx.arc(cx,cy, Math.max(4, cellSize*0.14), 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#b37f00'; ctx.fillRect(cx-2, cy-1, 4, 2);
-    });
+      ctx.fillStyle='#ffd166'; ctx.beginPath(); ctx.arc(cx,cy, Math.max(4, cellSize*0.14), 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle='#b37f00'; ctx.fillRect(cx-2, cy-1, 4, 2);
+    }
 
     // exit
-    if(exitCell){
-      const px = originX + exitCell.x*cellSize, py = originY + exitCell.y*cellSize;
-      ctx.fillStyle = '#34d399';
-      ctx.fillRect(px + cellSize*0.2, py + cellSize*0.2, cellSize*0.6, cellSize*0.6);
-    }
+    const ex = originX + exitCell.x*cellSize, ey = originY + exitCell.y*cellSize;
+    ctx.fillStyle = '#34d399'; ctx.fillRect(ex + cellSize*0.2, ey + cellSize*0.2, cellSize*0.6, cellSize*0.6);
 
-    // player animated: bob + eye direction based on last move
+    // player (bobbing + eye)
     const bob = Math.sin((Date.now()%800)/800 * Math.PI*2) * (cellSize*0.04);
-    const ppx = originX + player.x*cellSize + cellSize*0.12, ppy = originY + player.y*cellSize + cellSize*0.12 + bob;
-    // body: rounded rect look via arc/rect
-    ctx.fillStyle = '#60a5fa';
-    roundRect(ctx, ppx, ppy, cellSize*0.76, cellSize*0.76, cellSize*0.16, true, false);
+    const ppx = originX + player.x*cellSize + cellSize*0.12;
+    const ppy = originY + player.y*cellSize + cellSize*0.12 + bob;
+    roundRect(ctx, ppx, ppy, cellSize*0.76, cellSize*0.76, cellSize*0.16, true);
+    // eye
+    ctx.fillStyle='#021826';
+    const eyeX = ppx + (cellSize*0.76)/2 + (player.lastDx||0) * (cellSize*0.12);
+    const eyeY = ppy + (cellSize*0.76)/2 + (player.lastDy||0) * (cellSize*0.12);
+    ctx.beginPath(); ctx.arc(eyeX, eyeY, Math.max(3, cellSize*0.06), 0, Math.PI*2); ctx.fill();
 
-    // player eye (directional)
-    const eyeX = ppx + (cellSize*0.76)/2 + (player.lastDx||0)* (cellSize*0.12 || 0);
-    const eyeY = ppy + (cellSize*0.76)/2 + (player.lastDy||0)* (cellSize*0.12 || 0);
-    ctx.fillStyle = '#021826'; ctx.beginPath(); ctx.arc(eyeX, eyeY, Math.max(3, cellSize*0.06), 0, Math.PI*2); ctx.fill();
-
-    // minotaur animated: pulse scale & color shift
+    // minotaur
     if(minotaur){
-      const t = (Date.now()%1000)/1000;
-      const pulse = 1 + Math.sin(t*Math.PI*2)*0.06;
-      const mpx = originX + minotaur.x*cellSize + cellSize*0.2, mpy = originY + minotaur.y*cellSize + cellSize*0.2;
-      const w = cellSize*0.6 * pulse, h = cellSize*0.6 * pulse;
-      const offx = (cellSize*0.6 - w)/2, offy = (cellSize*0.6 - h)/2;
-      // color shifts slightly between red/orange
-      const r = 255, g = Math.floor(100 + 80*Math.abs(Math.sin(t*Math.PI*2))), b = 110;
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
-      roundRect(ctx, mpx+offx, mpy+offy, w, h, cellSize*0.1, true, false);
+      const t=(Date.now()%1000)/1000, pulse=1+Math.sin(t*Math.PI*2)*0.06;
+      const mx = originX + minotaur.x*cellSize + cellSize*0.2;
+      const my = originY + minotaur.y*cellSize + cellSize*0.2;
+      const w = cellSize*0.6*pulse, h=cellSize*0.6*pulse, offx=(cellSize*0.6-w)/2, offy=(cellSize*0.6-h)/2;
+      const r=255, g=Math.floor(100+80*Math.abs(Math.sin(t*Math.PI*2))), b=110;
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      roundRect(ctx, mx+offx, my+offy, w, h, cellSize*0.12, true);
     }
 
-    // fog of war if enabled
-    if(currentSettings.visionRadius > 0){
-      const vis = currentSettings.visionRadius;
-      const cx = originX + (player.x+0.5)*cellSize, cy = originY + (player.y+0.5)*cellSize;
-      const radiusPx = Math.max(1, vis * cellSize);
-      const grad = ctx.createRadialGradient(cx,cy, radiusPx*0.12, cx,cy, radiusPx);
-      grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(0.6, 'rgba(0,0,0,0.45)');
-      grad.addColorStop(1, 'rgba(0,0,0,0.95)');
-      ctx.fillStyle = grad; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // fog
+    if(currentSettings.visionRadius>0){
+      const vis=currentSettings.visionRadius;
+      const cx = originX + (player.x+0.5)*cellSize;
+      const cy = originY + (player.y+0.5)*cellSize;
+      const r = Math.max(1, vis*cellSize);
+      const g = ctx.createRadialGradient(cx,cy,r*0.15, cx,cy,r);
+      g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(0.6,'rgba(0,0,0,0.45)'); g.addColorStop(1,'rgba(0,0,0,0.95)');
+      ctx.fillStyle=g; ctx.fillRect(0,0,canvas.width,canvas.height);
     }
 
-    // update pills
-    timerPill.textContent = `Time: ${formatTime(timer)}`; keysPill.textContent = `Keys: ${keysCollected} / ${currentSettings.keysNeeded}`;
+    // HUD
+    hud.timer.textContent = `Time: ${fmtTime(timer)}`;
+    hud.keys.textContent = `Keys: ${keysCollected} / ${currentSettings.keysNeeded}`;
 
-    // request next frame
-    animateFrameId = requestAnimationFrame(draw);
+    animId = requestAnimationFrame(draw);
   }
 
-  // tiny rounded rect util
-  function roundRect(ctx,x,y,w,h,r, fill, stroke){
-    if(r<0) r=0;
+  function roundRect(ctx,x,y,w,h,r,fill){
     ctx.beginPath();
-    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r);
-    ctx.closePath();
-    if(fill) ctx.fill();
-    if(stroke) ctx.stroke();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+    if(fill) ctx.fillStyle='#60a5fa', ctx.fill();
   }
 
-  // ---------- gameplay helpers ----------
-  function formatTime(s){ const mm=Math.floor(s/60); const ss=s%60; return `${mm}:${ss.toString().padStart(2,'0')}`; }
+  function fmtTime(s){ const m=Math.floor(s/60), sec=s%60; return `${m}:${sec.toString().padStart(2,'0')}`; }
 
-  function canMove(cell, dir){ return !maze[cell.x][cell.y].walls[dir]; }
-
-  function movePlayer(dir){
-    if(!running) return;
-    if(!canMove(player,dir)) return;
-    if(dir===0) { player.y -=1; player.lastDx=0; player.lastDy=-1; }
-    if(dir===1) { player.x +=1; player.lastDx=1; player.lastDy=0; }
-    if(dir===2) { player.y +=1; player.lastDx=0; player.lastDy=1; }
-    if(dir===3) { player.x -=1; player.lastDx=-1; player.lastDy=0; }
-    onPlayerMove();
-    sfxFootstep();
-  }
-
-  function onPlayerMove(){
-    // collect keys
-    for(let i=keys.length-1;i>=0;i--){
-      if(keys[i].x===player.x && keys[i].y===player.y){
-        keys.splice(i,1);
-        keysCollected++; keysPill.textContent = `Keys: ${keysCollected} / ${currentSettings.keysNeeded}`;
-        sfxKey();
-        statusPill.textContent = 'Picked up a key!';
-      }
-    }
-    // exit check
-    if(exitCell && player.x===exitCell.x && player.y===exitCell.y){
-      if(keysCollected >= currentSettings.keysNeeded){
-        win();
-      } else {
-        statusPill.textContent = `Door locked — need ${currentSettings.keysNeeded - keysCollected} more.`;
-      }
-    }
-    // collision with minotaur
-    if(minotaur && player.x===minotaur.x && player.y===minotaur.y) lose('Caught by the Minotaur!');
-    // draw updates
-    draw();
-  }
-
-  function placeKeys(n){
-    keys = [];
-    let attempts = 0;
-    while(keys.length < n && attempts < 3000){
-      attempts++;
-      const x = Math.floor(Math.random()*cols), y = Math.floor(Math.random()*rows);
-      if((x===player.x && y===player.y) || (exitCell && x===exitCell.x && y===exitCell.y)) continue;
-      if(keys.some(k=>k.x===x && k.y===y)) continue;
-      keys.push({x,y});
-    }
-    keysCollected = 0;
-  }
-
-  function placeExit(){ exitCell = { x: cols-1, y: rows-1 }; }
-
-  // ---------------- timers & shifting (with connectivity safety) ----------------
-  function startTimer(){
-    timer = currentSettings.time;
-    if(timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(()=>{
-      timer--;
-      if(timer <= 0){ clearInterval(timerInterval); lose('Time ran out!'); }
-    }, 1000);
-  }
-  function stopTimer(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
-
-  function startShifting(){
-    if(shiftIntervalId) clearInterval(shiftIntervalId);
-    if(currentSettings.shiftInterval <= 0) return;
-    shiftIntervalId = setInterval(()=>{
-      if(Math.random() > currentSettings.shiftChance) return;
-      // choose random adjacent wall and attempt toggle, revert if connectivity broken
-      const x = Math.floor(Math.random()*cols), y = Math.floor(Math.random()*rows);
-      const dir = Math.floor(Math.random()*4);
-      const nx = x + (dir===1?1:dir===3?-1:0), ny = y + (dir===2?1:dir===0?-1:0);
-      if(nx<0||nx>=cols||ny<0||ny>=rows) return;
-      const a = maze[x][y], b = maze[nx][ny];
-      // toggle both
-      const prevA = a.walls[dir], prevB = b.walls[(dir+2)%4];
-      a.walls[dir] = !a.walls[dir]; b.walls[(dir+2)%4] = !b.walls[(dir+2)%4];
-      // ensure player->exit still connected; if not, revert
-      const ok = isConnected(player.x, player.y, exitCell.x, exitCell.y);
-      if(!ok){
-        a.walls[dir] = prevA; b.walls[(dir+2)%4] = prevB;
-      } else {
-        // also ensure all keys still reachable (so player doesn't get permanently locked out of keys)
-        let keysOk = true;
-        for(const k of keys){ if(!isConnected(player.x, player.y, k.x, k.y)){ keysOk = false; break; } }
-        if(!keysOk){
-          a.walls[dir] = prevA; b.walls[(dir+2)%4] = prevB;
-        } else {
-          // accepted change
-          statusPill.textContent = 'Walls shifted!';
-          sfxShift();
-        }
-      }
-      draw();
-    }, Math.max(120, currentSettings.shiftInterval * 1000));
-  }
-  function stopShifting(){ if(shiftIntervalId){ clearInterval(shiftIntervalId); shiftIntervalId=null; } }
-
-  // ---------------- Minotaur BFS & animation ----------------
-  function spawnMinotaur(){ minotaur = { x: Math.max(0, cols-1), y: 0 }; }
-  function stepMinotaur(){
-    if(!minotaur) return;
-    const q = [{x:minotaur.x,y:minotaur.y,path:[]}];
-    const seen = new Set([`${minotaur.x},${minotaur.y}`]);
-    while(q.length){
-      const cur = q.shift();
-      if(cur.x === player.x && cur.y === player.y){
-        if(cur.path.length >= 1){ const nxt = cur.path[0]; minotaur.x = nxt.x; minotaur.y = nxt.y; }
-        break;
-      }
-      const c = maze[cur.x][cur.y];
-      const dirs = [{dx:0,dy:-1,dir:0},{dx:1,dy:0,dir:1},{dx:0,dy:1,dir:2},{dx:-1,dy:0,dir:3}];
-      for(const d of dirs){
-        if(c.walls[d.dir]) continue;
-        const nx = cur.x + d.dx, ny = cur.y + d.dy;
-        if(nx<0||nx>=cols||ny<0||ny>=rows) continue;
-        const key = `${nx},${ny}`;
-        if(seen.has(key)) continue;
-        seen.add(key); q.push({x:nx,y:ny,path: cur.path.concat([{x:nx,y:ny}])});
-      }
-    }
-    if(minotaur.x === player.x && minotaur.y === player.y) lose('Caught by the Minotaur!');
-  }
-
-  // ---------------- start/stop/reset/win/lose ----------------
-  function startGameFromUI(){
-    const s = readSettingsFromUI();
-    saveSettings(s);
-    startGame(s);
-  }
-
-  function startGame(settings){
-    stopGame();
-    currentSettings = Object.assign({}, settings);
-    maze = makeMaze(currentSettings.size);
-    player = { x:0, y:0, lastDx:0, lastDy:0 };
-    placeExit(); placeKeys(currentSettings.keysNeeded);
-    if(currentSettings.minotaur) spawnMinotaur(); else minotaur = null;
-    modePill.textContent = `Mode: ${currentSettings.size}×${currentSettings.size}`;
-    statusPill.textContent = 'Go!';
-    keysPill.textContent = `Keys: ${keysCollected} / ${currentSettings.keysNeeded}`;
-    running = true;
-    startTimer(); startShifting();
-    if(currentSettings.minotaur){
-      if(minotaurIntervalId) clearInterval(minotaurIntervalId);
-      minotaurIntervalId = setInterval(()=>{ stepMinotaur(); }, 420);
-    }
-    // start drawing animation loop
-    if(animateFrameId) cancelAnimationFrame(animateFrameId);
-    animateFrameId = requestAnimationFrame(draw);
-    canvas.focus();
-  }
-
-  function stopGame(){
-    running = false;
-    stopTimer(); stopShifting();
-    if(minotaurIntervalId){ clearInterval(minotaurIntervalId); minotaurIntervalId=null; }
-    if(animateFrameId) cancelAnimationFrame(animateFrameId);
-  }
-
-  function restartGame(){ if(!currentSettings) return; startGame(currentSettings); }
-
-  function win(){ stopGame(); sfxWin(); showGameOver(true, 'You escaped! 🎉'); }
-
-  function lose(msg){ stopGame(); sfxLose(); showGameOver(false, msg || 'You lost.'); }
-
-  // ---------------- UI events ----------------
-  playBtn.addEventListener('click', startGameFromUI);
-  instructionsBtn.addEventListener('click', ()=>{ instructionsModal.style.display='flex'; });
-  closeInstr.addEventListener('click', ()=>{ instructionsModal.style.display='none'; });
-  menuBtn.addEventListener('click', ()=>{ stopGame(); statusPill.textContent='Main menu'; });
-  restartBtn.addEventListener('click', restartGame);
-  playAgain.addEventListener('click', ()=>{ gameOverModal.style.display='none'; restartGame(); });
-  backToMenu.addEventListener('click', ()=>{ gameOverModal.style.display='none'; stopGame(); statusPill.textContent='Main menu'; });
-
-  // keyboard movement
-  window.addEventListener('keydown', (e)=>{
-    if(!running) return;
-    const k = e.key;
-    if(['ArrowUp','w','W'].includes(k)){ e.preventDefault(); movePlayer(0); }
-    else if(['ArrowRight','d','D'].includes(k)){ e.preventDefault(); movePlayer(1); }
-    else if(['ArrowDown','s','S'].includes(k)){ e.preventDefault(); movePlayer(2); }
-    else if(['ArrowLeft','a','A'].includes(k)){ e.preventDefault(); movePlayer(3); }
-    else if(k === ' '){ e.preventDefault(); if(exitCell && player.x===exitCell.x && player.y===exitCell.y){ if(keysCollected>=currentSettings.keysNeeded) win(); else statusPill.textContent=`Door locked — need ${currentSettings.keysNeeded - keysCollected}`; } }
-  });
-
-  canvas.addEventListener('click', ()=>{ canvas.focus(); });
-
-  // initial draw
-  function drawInitial(){ ctx.fillStyle='#00121a'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#6ee7b7'; ctx.font='24px Inter, Arial'; ctx.fillText('Choose settings and press Play', 22, 40); }
-  drawInitial();
-
-  // gameover modal
-  function showGameOver(won, text){ gameOverTitle.textContent = won ? 'You Win!' : 'Game Over'; gameOverText.textContent = text; gameOverModal.style.display='flex'; }
-
-  // ---------------- presets load/save ----------------
-  function loadPresetListToUI(){ refreshPresetList(); }
-  function refreshPresetList(){
-    const presets = loadPresets();
-    presetList.innerHTML = '';
-    const names = Object.keys(presets);
-    if(names.length === 0){ const p = document.createElement('div'); p.className='hint'; p.textContent='No saved presets.'; presetList.appendChild(p); return; }
-    names.forEach(n=>{
-      const cfg = presets[n];
-      const row = document.createElement('div'); row.className='preset-item';
-      const btn = document.createElement('button'); btn.textContent = n;
-      btn.addEventListener('click', ()=>{ applySettingsToUI(cfg); saveSettings(readSettingsFromUI()); statusPill.textContent = `Loaded preset "${n}"`; });
-      const del = document.createElement('button'); del.className='small'; del.textContent='Delete'; del.style.width='80px';
-      del.addEventListener('click', ()=>{
-        if(!confirm(`Delete preset "${n}"?`)) return;
-        delete presets[n]; savePresets(presets); refreshPresetList();
-      });
-      row.appendChild(btn); row.appendChild(del); presetList.appendChild(row);
-    });
-  }
-
-  savePresetBtn.addEventListener('click', ()=>{
-    const name = (presetNameEl.value||'').trim();
-    if(!name){ alert('Enter a preset name'); return; }
-    const presets = loadPresets();
-    const cfg = readSettingsFromUI();
-    presets[name] = cfg; savePresets(presets); refreshPresetList();
-    presetNameEl.value=''; statusPill.textContent = `Saved preset "${name}"`;
-  });
-
-  clearPresetsBtn.addEventListener('click', ()=>{
-    if(!confirm('Clear all saved presets?')) return;
-    savePresets({}); refreshPresetList();
-  });
-
-  // apply stored settings initially and populate UI
-  const stored = loadSettings(); applySettingsToUI(stored); refreshPresetList();
-
-  // small helpers: save settings to storage on change
-  [sizeEl,timeEl,shiftEl,shiftChanceEl,keysEl,visionEl,minotaurEl].forEach(el=>{
-    el.addEventListener('change', ()=> saveSettings(readSettingsFromUI()));
-  });
-
-  // expose for console
-  window.startGame = startGame;
-  window.savePreset = (name)=>{ const p = loadPresets(); p[name]=readSettingsFromUI(); savePresets(p); refreshPresetList(); };
+  // ---------- HUD timer refresher (separate from draw loop) ----------
+  setInterval(()=>{ if(running) hud.timer.textContent = `Time: ${fmtTime(timer)}`; }, 250);
 
 })();
 </script>
